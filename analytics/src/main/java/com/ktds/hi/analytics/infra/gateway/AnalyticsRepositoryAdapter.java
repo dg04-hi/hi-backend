@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 분석 리포지토리 어댑터 클래스

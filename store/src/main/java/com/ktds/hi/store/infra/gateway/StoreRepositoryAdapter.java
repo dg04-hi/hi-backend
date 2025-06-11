@@ -7,6 +7,7 @@ import com.ktds.hi.store.infra.gateway.repository.StoreJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

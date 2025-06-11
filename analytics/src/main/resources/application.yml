@@ -35,8 +35,22 @@ ai-api:
     base-url: https://api.anthropic.com
     model: claude-3-sonnet-20240229
 
+#external-api:
+#  openai:
+#    api-key: ${OPENAI_API_KEY:}
+#    base-url: https://api.openai.com
+#  claude:
+#    api-key: ${CLAUDE_API_KEY:}
+#    base-url: https://api.anthropic.com
+
 springdoc:
   api-docs:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
