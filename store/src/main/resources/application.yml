@@ -1,0 +1,47 @@
+server:
+  port: ${STORE_SERVICE_PORT:8082}
+
+spring:
+  application:
+    name: store-service
+  
+  datasource:
+    url: ${STORE_DB_URL:jdbc:postgresql://localhost:5432/hiorder_store}
+    username: ${STORE_DB_USERNAME:hiorder_user}
+    password: ${STORE_DB_PASSWORD:hiorder_pass}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+
+external-api:
+  naver:
+    client-id: ${NAVER_CLIENT_ID:}
+    client-secret: ${NAVER_CLIENT_SECRET:}
+    base-url: https://openapi.naver.com
+  kakao:
+    api-key: ${KAKAO_API_KEY:}
+    base-url: https://dapi.kakao.com
+  google:
+    api-key: ${GOOGLE_API_KEY:}
+    base-url: https://maps.googleapis.com
+  hiorder:
+    api-key: ${HIORDER_API_KEY:}
+    base-url: ${HIORDER_BASE_URL:https://api.hiorder.com}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

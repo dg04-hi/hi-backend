@@ -1,0 +1,46 @@
+server:
+  port: ${ANALYTICS_SERVICE_PORT:8084}
+
+spring:
+  application:
+    name: analytics-service
+  
+  datasource:
+    url: ${ANALYTICS_DB_URL:jdbc:postgresql://localhost:5432/hiorder_analytics}
+    username: ${ANALYTICS_DB_USERNAME:hiorder_user}
+    password: ${ANALYTICS_DB_PASSWORD:hiorder_pass}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+
+external-api:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: https://api.openai.com
+  claude:
+    api-key: ${CLAUDE_API_KEY:}
+    base-url: https://api.anthropic.com
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

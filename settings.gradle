@@ -1,0 +1,8 @@
+rootProject.name = 'hiorder-backend'
+
+include 'common'
+include 'member'
+include 'store'
+include 'review' 
+include 'analytics'
+include 'recommend'

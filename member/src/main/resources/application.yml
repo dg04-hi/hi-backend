@@ -1,0 +1,55 @@
+server:
+  port: ${MEMBER_SERVICE_PORT:8081}
+
+spring:
+  application:
+    name: member-service
+  
+  datasource:
+    url: ${MEMBER_DB_URL:jdbc:postgresql://localhost:5432/hiorder_member}
+    username: ${MEMBER_DB_USERNAME:hiorder_user}
+    password: ${MEMBER_DB_PASSWORD:hiorder_pass}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1ms
+        max-idle: 8
+        min-idle: 0
+
+jwt:
+  secret: ${JWT_SECRET:hiorder-secret-key-for-jwt-token-generation-must-be-long-enough}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:3600000}  # 1시간
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7일
+
+sms:
+  api-key: ${SMS_API_KEY:}
+  api-secret: ${SMS_API_SECRET:}
+  from-number: ${SMS_FROM_NUMBER:}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

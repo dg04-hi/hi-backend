@@ -1,0 +1,94 @@
+spring:
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+  # Redis 설정
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # Jackson 설정
+  jackson:
+    time-zone: Asia/Seoul
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # 트랜잭션 설정
+  transaction:
+    default-timeout: 30
+
+# 애플리케이션 설정
+app:
+  # JWT 설정
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:hiorder-secret-key-for-jwt-token-generation-2024-very-long-secret-key}
+    access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:3600000}  # 1시간
+    refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:604800000}  # 7일
+
+  # CORS 설정
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+    exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+    max-age: ${CORS_MAX_AGE:3600}
+
+  # 캐시 설정
+  cache:
+    default-ttl: ${CACHE_DEFAULT_TTL:3600}  # 1시간
+
+  # Swagger 설정
+  swagger:
+    title: ${SWAGGER_TITLE:하이오더 API}
+    description: ${SWAGGER_DESCRIPTION:하이오더 백엔드 API 문서}
+    version: ${SWAGGER_VERSION:1.0.0}
+    server-url: ${SWAGGER_SERVER_URL:http://localhost:8080}
+
+# 로깅 설정
+logging:
+  level:
+    com.ktds.hi: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${SECURITY_LOG_LEVEL:INFO}
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:INFO}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_PARAM_LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# 관리 엔드포인트 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized

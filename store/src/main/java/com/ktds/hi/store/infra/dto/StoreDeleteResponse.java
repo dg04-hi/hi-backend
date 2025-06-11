@@ -1,0 +1,19 @@
+package com.ktds.hi.store.infra.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+/**
+ * 매장 삭제 응답 DTO
+ */
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class StoreDeleteResponse {
+    
+    private Boolean success;
+    private String message;
+}

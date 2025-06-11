@@ -1,0 +1,44 @@
+server:
+  port: ${RECOMMEND_SERVICE_PORT:8085}
+
+spring:
+  application:
+    name: recommend-service
+  
+  datasource:
+    url: ${RECOMMEND_DB_URL:jdbc:postgresql://localhost:5432/hiorder_recommend}
+    username: ${RECOMMEND_DB_USERNAME:hiorder_user}
+    password: ${RECOMMEND_DB_PASSWORD:hiorder_pass}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+
+recommendation:
+  cache-ttl: 3600  # 1시간
+  max-recommendations: 20
+  default-radius: 5000  # 5km
+
+location:
+  google-maps-api-key: ${GOOGLE_MAPS_API_KEY:}
+  
+hiorder-api:
+  base-url: ${HIORDER_API_BASE_URL:https://api.hiorder.com}
+  api-key: ${HIORDER_API_KEY:}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

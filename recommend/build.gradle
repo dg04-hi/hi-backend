@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':common')
+    
+    // AI and Location Services
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+}

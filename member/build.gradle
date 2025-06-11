@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':common')
+    
+    // SMS Service (Optional)
+    implementation 'net.nurigo:sdk:4.3.0'
+}
