@@ -20,6 +20,23 @@ public class EventAdapter implements EventPort {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
+    public void publishAnalysisCompletedEvent(Long storeId, AnalysisType analysisType) {
+        log.info("분석 완료 이벤트 발행: storeId={}, analysisType={}", storeId, analysisType);
+
+        try {
+            // 분석 완료 이벤트 객체 생성 및 발행
+            AnalysisCompletedEvent event = new AnalysisCompletedEvent(storeId, analysisType);
+            eventPublisher.publishEvent(event);
+
+            log.info("분석 완료 이벤트 발행 완료: storeId={}, analysisType={}", storeId, analysisType);
+
+        } catch (Exception e) {
+            log.error("분석 완료 이벤트 발행 실패: storeId={}, analysisType={}, error={}",
+                storeId, analysisType, e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void publishActionPlanCreatedEvent(ActionPlan actionPlan) {
         log.info("실행 계획 생성 이벤트 발행: planId={}, storeId={}", actionPlan.getId(), actionPlan.getStoreId());
         
@@ -47,6 +64,27 @@ public class EventAdapter implements EventPort {
         
         public ActionPlan getActionPlan() {
             return actionPlan;
+        }
+    }
+
+    /**
+     * 분석 완료 이벤트 클래스
+     */
+    public static class AnalysisCompletedEvent {
+        private final Long storeId;
+        private final AnalysisType analysisType;
+
+        public AnalysisCompletedEvent(Long storeId, AnalysisType analysisType) {
+            this.storeId = storeId;
+            this.analysisType = analysisType;
+        }
+
+        public Long getStoreId() {
+            return storeId;
+        }
+
+        public AnalysisType getAnalysisType() {
+            return analysisType;
         }
     }
 }
