@@ -16,7 +16,7 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .addServersItem(new Server().url("/"))
+                // .addServersItem(new Server().url("/"))
                 .info(new Info()
                         .title("하이오더 회원 관리 서비스 API")
                         .description("회원 가입, 로그인, 취향 관리 등 회원 관련 기능을 제공하는 API")

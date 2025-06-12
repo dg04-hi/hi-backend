@@ -13,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * 테스트를 위해 모든 엔드포인트를 인증 없이 접근 가능하도록 설정
  */
 @Configuration
-@EnableWebSecurity
+//@EnableWebSecurity
 public class SecurityConfig {
 
 	@Bean
