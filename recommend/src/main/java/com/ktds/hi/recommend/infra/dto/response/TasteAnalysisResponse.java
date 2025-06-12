@@ -31,6 +31,12 @@ public class TasteAnalysisResponse {
     @Schema(description = "선호 태그 목록", example = "[\"매운맛\", \"혼밥\"]")
     private List<String> preferredTags;
 
+    @Schema(description = "가격 선호도 (0-100 점수)", example = "65.5")
+    private Double pricePreference;
+
+    @Schema(description = "거리 선호도 (0-100 점수)", example = "70.0")
+    private Double distancePreference;
+
     @Schema(description = "분석 일시")
     private LocalDateTime analysisDate;
 
@@ -39,4 +45,5 @@ public class TasteAnalysisResponse {
 
     @Schema(description = "추천사항", example = "[\"한식 카테고리의 새로운 매장을 시도해보세요\"]")
     private List<String> recommendations;
+
 }

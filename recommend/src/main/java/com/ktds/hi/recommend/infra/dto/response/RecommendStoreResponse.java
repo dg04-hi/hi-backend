@@ -52,4 +52,7 @@ public class RecommendStoreResponse {
 
     @Schema(description = "태그 목록", example = "[\"매운맛\", \"혼밥\"]")
     private List<String> tags;
+
+    @Schema(description = "가게 점수")
+    private Double rating;
 }

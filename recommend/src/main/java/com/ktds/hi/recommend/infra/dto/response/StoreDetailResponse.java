@@ -17,42 +17,66 @@ public class StoreDetailResponse {
     @Schema(description = "매장 ID", example = "1")
     private Long storeId;
 
-    @Schema(description = "매장명", example = "맛있는 김치찌개")
+    @Schema(description = "매장명", example = "맛있는 한식당")
     private String storeName;
-
-    @Schema(description = "카테고리", example = "한식")
-    private String category;
 
     @Schema(description = "주소", example = "서울시 강남구 테헤란로 123")
     private String address;
 
-    @Schema(description = "전화번호", example = "02-1234-5678")
-    private String phoneNumber;
+    @Schema(description = "카테고리", example = "한식")
+    private String category;
 
-    @Schema(description = "위도", example = "37.5665")
-    private Double latitude;
+    @Schema(description = "평점", example = "4.5")
+    private Double rating;
 
-    @Schema(description = "경도", example = "126.9780")
-    private Double longitude;
-
-    @Schema(description = "평균 평점", example = "4.5")
-    private Double averageRating;
-
-    @Schema(description = "리뷰 수", example = "127")
+    @Schema(description = "리뷰 수", example = "256")
     private Integer reviewCount;
 
+    @Schema(description = "거리(미터)", example = "500")
+    private Integer distance;
+
+    @Schema(description = "태그 목록", example = "[\"맛집\", \"혼밥\", \"가성비\"]")
+    private List<String> tags;
+
     @Schema(description = "매장 이미지 URL 목록")
-    private List<String> imageUrls;
+    private List<String> images;
 
-    @Schema(description = "운영시간", example = "10:00-22:00")
-    private String operatingHours;
+    @Schema(description = "매장 설명")
+    private String description;
 
-    @Schema(description = "AI 요약", example = "친절한 서비스와 맛있는 김치찌개로 유명한 곳입니다")
+    @Schema(description = "개인화된 추천 이유", example = "당신이 좋아하는 '매운맛' 특성을 가진 매장입니다")
+    private String personalizedReason;
+
+    @Schema(description = "AI 요약", example = "고객들이 매운맛과 친절한 서비스를 칭찬하는 매장입니다")
     private String aiSummary;
 
-    @Schema(description = "긍정 키워드", example = "[\"맛있다\", \"친절하다\", \"깔끔하다\"]")
-    private List<String> topPositiveKeywords;
+    @Schema(description = "운영 시간")
+    private String operatingHours;
 
-    @Schema(description = "부정 키워드", example = "[\"시끄럽다\", \"대기시간\"]")
-    private List<String> topNegativeKeywords;
+    @Schema(description = "전화번호")
+    private String phoneNumber;
+
+    @Schema(description = "메뉴 정보")
+    private List<MenuInfo> menuList;
+
+    /**
+     * 메뉴 정보 내부 클래스
+     */
+    @Getter
+    @Builder
+    @Schema(description = "메뉴 정보")
+    public static class MenuInfo {
+
+        @Schema(description = "메뉴명", example = "김치찌개")
+        private String menuName;
+
+        @Schema(description = "가격", example = "8000")
+        private Integer price;
+
+        @Schema(description = "메뉴 설명", example = "매콤한 김치찌개")
+        private String description;
+
+        @Schema(description = "인기 메뉴 여부", example = "true")
+        private Boolean isPopular;
+    }
 }
