@@ -50,15 +50,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
           
-    - name: Fix Gradle Wrapper
+    - name: Generate Gradle Wrapper
       run: |
-        echo "Checking gradle wrapper files..."
-        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-          echo "gradle-wrapper.jar not found, downloading..."
-          mkdir -p gradle/wrapper
-          curl -L -o gradle/wrapper/gradle-wrapper.jar \
-            "https://services.gradle.org/distributions/gradle-8.13-wrapper.jar"
-        fi
+        echo "Generating gradle wrapper..."
+        gradle wrapper --gradle-version 8.13
         chmod +x gradlew
         echo "Testing gradle wrapper..."
         ./gradlew --version
