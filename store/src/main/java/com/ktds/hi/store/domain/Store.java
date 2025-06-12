@@ -1,4 +1,4 @@
-package com.ktds.hi.store.biz.domain;
+package com.ktds.hi.store.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
