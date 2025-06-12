@@ -3,6 +3,9 @@ server:
   port: ${RECOMMEND_SERVICE_PORT:8085}
 
 spring:
+  cloud:
+    compatibility-verifier:
+      enabled: false
   application:
     name: recommend-service
   

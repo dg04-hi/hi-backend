@@ -12,11 +12,12 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class SwaggerConfig {
+
     
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .addServersItem(new Server().url("/"))
+                // .addServersItem(new Server().url("/"))
                 .info(new Info()
                         .title("하이오더 추천 서비스 API")
                         .description("사용자 취향 기반 매장 추천 및 취향 분석 관련 기능을 제공하는 API")

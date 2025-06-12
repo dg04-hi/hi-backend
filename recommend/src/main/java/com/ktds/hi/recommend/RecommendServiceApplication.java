@@ -2,7 +2,9 @@ package com.ktds.hi.recommend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * 추천 서비스 메인 애플리케이션 클래스
@@ -16,6 +18,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
         "com.ktds.hi.common"
 })
 @EnableJpaAuditing
+@EnableJpaRepositories(basePackages = "com.ktds.hi.recommend.infra.gateway.repository")
+@EntityScan(basePackages = "com.ktds.hi.recommend.infra.gateway.entity")
 public class RecommendServiceApplication {
 
     public static void main(String[] args) {
