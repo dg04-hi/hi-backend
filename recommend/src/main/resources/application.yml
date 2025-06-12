@@ -6,7 +6,7 @@ spring:
     name: recommend-service
   
   datasource:
-    url: ${RECOMMEND_DB_URL:jdbc:postgresql://localhost:5432/hiorder_recommend}
+    url: ${RECOMMEND_DB_URL:jdbc:postgresql://20.214.97.100:5432/hiorder_recommend}
     username: ${RECOMMEND_DB_USERNAME:hiorder_user}
     password: ${RECOMMEND_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver

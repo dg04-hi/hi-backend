@@ -6,7 +6,7 @@ spring:
     name: review-service
   
   datasource:
-    url: ${REVIEW_DB_URL:jdbc:postgresql://localhost:5432/hiorder_review}
+    url: ${REVIEW_DB_URL:jdbc:postgresql://4.230.146.163:5432/hiorder_review}
     username: ${REVIEW_DB_USERNAME:hiorder_user}
     password: ${REVIEW_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver
