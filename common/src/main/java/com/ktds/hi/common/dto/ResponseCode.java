@@ -1,4 +1,4 @@
-package com.ktds.hi.common.response;
+package com.ktds.hi.common.dto;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

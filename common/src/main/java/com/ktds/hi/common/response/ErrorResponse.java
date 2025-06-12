@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import com.ktds.hi.common.dto.ResponseCode;
+
 /**
  * 에러 응답 DTO
  */

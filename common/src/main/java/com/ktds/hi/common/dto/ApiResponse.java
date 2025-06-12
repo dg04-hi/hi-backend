@@ -1,6 +1,7 @@
-package com.ktds.hi.common.response;
+package com.ktds.hi.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

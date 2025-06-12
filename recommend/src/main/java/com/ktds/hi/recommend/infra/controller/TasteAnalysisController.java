@@ -4,7 +4,7 @@ import com.ktds.hi.recommend.biz.usecase.in.TasteAnalysisUseCase;
 import com.ktds.hi.recommend.infra.dto.request.TasteUpdateRequest;
 import com.ktds.hi.recommend.infra.dto.response.TasteAnalysisResponse;
 import com.ktds.hi.recommend.infra.dto.response.PreferenceTagResponse;
-import com.ktds.hi.common.dto.response.ApiResponse;
+import com.ktds.hi.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -45,12 +45,12 @@ public class TasteAnalysisController {
      */
     @PostMapping("/update")
     @Operation(summary = "취향 프로필 업데이트", description = "사용자의 리뷰 데이터를 기반으로 취향 프로필을 업데이트합니다.")
-    public ResponseEntity<ApiResponse<Void>> updateTasteProfile(
+    public ResponseEntity<ApiResponse<String>> updateTasteProfile(
             Authentication authentication,
             @Valid @RequestBody TasteUpdateRequest request) {
 
         Long memberId = Long.valueOf(authentication.getName());
-        tasteAnalysisUseCase.updateTasteProfile(memberId, request);
+        tasteAnalysisUseCase.updateTasteProfile(memberId);
 
         return ResponseEntity.ok(ApiResponse.success("취향 프로필이 업데이트되었습니다"));
     }

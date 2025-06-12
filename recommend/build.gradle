@@ -6,6 +6,6 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.0'
 
 
-    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:'
-    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer:latest'
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:3.1.1'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer:4.1.2'
 }
