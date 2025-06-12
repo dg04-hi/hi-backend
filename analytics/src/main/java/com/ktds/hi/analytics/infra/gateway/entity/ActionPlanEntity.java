@@ -26,7 +26,13 @@ import java.time.LocalDateTime;
  * 점주의 개선 실행 계획을 저장
  */
 @Entity
-@Table(name = "action_plan")
+@Table(name = "action_plan",
+    indexes = {
+        @Index(name = "idx_action_plan_store_id", columnList = "store_id"),
+        @Index(name = "idx_action_plan_user_id", columnList = "user_id"),
+        @Index(name = "idx_action_plan_status", columnList = "status"),
+        @Index(name = "idx_action_plan_created_at", columnList = "created_at")
+    })
 @Getter
 @Builder
 @NoArgsConstructor
@@ -73,10 +79,4 @@ public class ActionPlanEntity {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    @Index(name = "idx_action_plan_store_id", columnList = "store_id")
-    @Index(name = "idx_action_plan_user_id", columnList = "user_id")
-    @Index(name = "idx_action_plan_status", columnList = "status")
-    public static class Indexes {
-    }
 }

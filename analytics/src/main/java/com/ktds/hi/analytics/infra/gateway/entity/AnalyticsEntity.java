@@ -16,7 +16,13 @@ import java.time.LocalDateTime;
  * 매장의 분석 정보를 저장
  */
 @Entity
-@Table(name = "analytics")
+@Table(name = "analytics",
+    indexes = {
+        @Index(name = "idx_analytics_store_id", columnList = "store_id"),
+        @Index(name = "idx_analytics_last_analysis_date", columnList = "last_analysis_date"),
+        @Index(name = "idx_analytics_created_at", columnList = "created_at"),
+        @Index(name = "idx_analytics_average_rating", columnList = "average_rating")
+    })
 @Getter
 @Builder
 @NoArgsConstructor
@@ -56,8 +62,5 @@ public class AnalyticsEntity {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    @Index(name = "idx_analytics_store_id", columnList = "store_id")
-    public static class Indexes {
-    }
+
 }
