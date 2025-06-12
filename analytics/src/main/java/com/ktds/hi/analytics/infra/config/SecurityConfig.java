@@ -13,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * 테스트를 위해 모든 엔드포인트를 인증 없이 접근 가능하도록 설정
  */
 @Configuration
-//@EnableWebSecurity
+@EnableWebSecurity
 public class SecurityConfig {
 
 	@Bean
@@ -23,7 +23,7 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				// Swagger 관련 경로 모두 허용
-				.requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+				.requestMatchers("/swagger-ui.html","/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.requestMatchers("/api-docs/**", "/v3/api-docs/**").permitAll()
 				.requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
 
