@@ -1,3 +1,4 @@
+# recommend/src/main/resources/application.yml
 server:
   port: ${RECOMMEND_SERVICE_PORT:8085}
 
@@ -5,12 +6,24 @@ spring:
   application:
     name: recommend-service
   
+  # 프로필 설정
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  
+  # 데이터베이스 설정
   datasource:
     url: ${RECOMMEND_DB_URL:jdbc:postgresql://localhost:5432/hiorder_recommend}
     username: ${RECOMMEND_DB_USERNAME:hiorder_user}
     password: ${RECOMMEND_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      pool-name: RecommendHikariCP
   
+  # JPA 설정
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:validate}
@@ -19,27 +32,206 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+  
+  # Redis 설정 (올바른 구조)
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      database: ${REDIS_DATABASE:0}
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
+        shutdown-timeout: 100ms
 
-recommendation:
-  cache-ttl: 3600  # 1시간
-  max-recommendations: 20
-  default-radius: 5000  # 5km
+# 외부 서비스 URL 설정
+services:
+  store:
+    url: ${STORE_SERVICE_URL:http://store-service:8082}
+  review:
+    url: ${REVIEW_SERVICE_URL:http://review-service:8083}
+  member:
+    url: ${MEMBER_SERVICE_URL:http://member-service:8081}
 
-location:
-  google-maps-api-key: ${GOOGLE_MAPS_API_KEY:}
-  
-hiorder-api:
-  base-url: ${HIORDER_API_BASE_URL:https://api.hiorder.com}
-  api-key: ${HIORDER_API_KEY:}
+# Feign 설정
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: basic
+      store-service:
+        connectTimeout: 3000
+        readTimeout: 8000
+      review-service:
+        connectTimeout: 3000
+        readTimeout: 8000
+  circuitbreaker:
+    enabled: true
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
 
+# Circuit Breaker 설정
+resilience4j:
+  circuitbreaker:
+    instances:
+      store-service:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30000
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      review-service:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30000
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+  retry:
+    instances:
+      store-service:
+        max-attempts: 3
+        wait-duration: 1000
+      review-service:
+        max-attempts: 3
+        wait-duration: 1000
+
+# 추천 알고리즘 설정
+recommend:
+  algorithm:
+    distance-weight: 0.3
+    rating-weight: 0.3
+    taste-weight: 0.4
+    max-distance: 50000  # 50km
+    default-radius: 5000  # 5km
+  cache:
+    ttl:
+      recommendation: 30m
+      store-detail: 1h
+      taste-analysis: 6h
+      popular-stores: 2h
+  batch:
+    size: 100
+    max-concurrent: 5
+
+# Actuator 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+
+# Swagger/OpenAPI 설정
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    display-request-duration: true
+    display-operation-id: true
+  show-actuator: false
+
+# 로깅 설정
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.ktds.hi.recommend: ${LOG_LEVEL:INFO}
+    org.springframework.cloud.openfeign: ${LOG_LEVEL_FEIGN:DEBUG}
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.springframework.data.redis: ${LOG_LEVEL_REDIS:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:INFO}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_PARAM:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId},%X{spanId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId},%X{spanId}] %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE_PATH:./logs/recommend-service.log}
+    max-size: 100MB
+    max-history: 30
+
+# Security 설정
+security:
+  jwt:
+    secret: ${JWT_SECRET:hiorder-recommend-secret-key-2024}
+    expiration: ${JWT_EXPIRATION:86400000} # 24시간
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+
+---
+# Local 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: local
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+
+logging:
+  level:
+    com.ktds.hi.recommend: DEBUG
+    org.springframework.web: DEBUG
+
+---
+# Development 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+logging:
+  level:
+    com.ktds.hi.recommend: DEBUG
+
+---
+# Production 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    root: WARN
+    com.ktds.hi.recommend: INFO
+    org.springframework.cloud.openfeign: INFO
