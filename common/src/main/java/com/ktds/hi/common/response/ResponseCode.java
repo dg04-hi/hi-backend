@@ -50,7 +50,30 @@ public enum ResponseCode {
     // 외부 서비스 오류
     SMS_SEND_ERROR("3001", "SMS 전송 실패"),
     EMAIL_SEND_ERROR("3002", "이메일 전송 실패"),
-    EXTERNAL_API_ERROR("3003", "외부 API 호출 실패");
+    EXTERNAL_API_ERROR("3003", "외부 API 호출 실패"),
+
+    // 인증인가 관련
+    INSUFFICIENT_PRIVILEGES("INSUFFICIENT_PRIVILEGES", "권한 부족"),
+
+    // 리소스 관련
+    RESOURCE_NOT_FOUND("RESOURCE_NOT_FOUND", "리소스를 찾을 수 없음"),
+    RESOURCE_ALREADY_EXISTS("RESOURCE_ALREADY_EXISTS", "리소스가 이미 존재함"),
+    RESOURCE_LOCKED("RESOURCE_LOCKED", "리소스가 잠겨있음"),
+
+    // 파일 처리 관련
+    FILE_TOO_LARGE("FILE_TOO_LARGE", "파일 크기가 너무 큼"),
+    UNSUPPORTED_FILE_TYPE("UNSUPPORTED_FILE_TYPE", "지원하지 않는 파일 형식"),
+    FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "파일 업로드 실패"),
+
+    // 결제 관련
+    PAYMENT_FAILED("PAYMENT_FAILED", "결제 실패"),
+    INSUFFICIENT_BALANCE("INSUFFICIENT_BALANCE", "잔액 부족"),
+    PAYMENT_CANCELLED("PAYMENT_CANCELLED", "결제 취소됨"),
+
+    // AI 분석 관련
+    AI_ANALYSIS_FAILED("AI_ANALYSIS_FAILED", "AI 분석 실패"),
+    AI_SERVICE_UNAVAILABLE("AI_SERVICE_UNAVAILABLE", "AI 서비스 이용 불가"),
+    ANALYSIS_IN_PROGRESS("ANALYSIS_IN_PROGRESS", "분석 진행 중");
 
     private final String code;
     private final String message;
