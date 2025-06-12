@@ -2,6 +2,7 @@ package com.ktds.hi.member;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 /**
@@ -12,7 +13,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  * @version 1.0.0
  */
 @SpringBootApplication(scanBasePackages = {"com.ktds.hi.member", "com.ktds.hi.common"})
-@EnableJpaAuditing
+@EntityScan(basePackages = "com.ktds.hi.member.repository.entity")
 public class MemberServiceApplication {
     
     public static void main(String[] args) {
