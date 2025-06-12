@@ -1,7 +1,8 @@
 package com.ktds.hi.member.config;
 
+
+import com.ktds.hi.member.config.JwtAuthenticationFilter;
 import com.ktds.hi.member.service.JwtTokenProvider;
-import com.ktds.hi.member.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -27,8 +28,7 @@ public class SecurityConfig {
 
     @Qualifier("memberJwtTokenProvider")
     private final JwtTokenProvider jwtTokenProvider;
-    private final AuthService authService;
-    
+
     /**
      * 보안 필터 체인 설정
      * JWT 인증 방식을 사용하고 세션은 무상태로 관리
@@ -40,16 +40,23 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/auth/**", "/api/members/register").permitAll()
-                .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, authService), 
-                           UsernamePasswordAuthenticationFilter.class);
-        
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
-    
+
+    /**
+     * JWT 인증 필터 빈
+     */
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider);
+    }
+
     /**
      * 비밀번호 암호화 빈
      */
@@ -57,7 +64,7 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     /**
      * 인증 매니저 빈
      */
@@ -65,4 +72,45 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+    // @Qualifier("memberJwtTokenProvider")
+    // private final JwtTokenProvider jwtTokenProvider;
+    // private final AuthService authService;
+    //
+    // /**
+    //  * 보안 필터 체인 설정
+    //  * JWT 인증 방식을 사용하고 세션은 무상태로 관리
+    //  */
+    // @Bean
+    // public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    //     http
+    //         .csrf(csrf -> csrf.disable())
+    //         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    //         .authorizeHttpRequests(authz -> authz
+    //             .requestMatchers("/api/auth/**", "/api/members/register").permitAll()
+    //             .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+    //             .requestMatchers("/actuator/**").permitAll()
+    //             .anyRequest().authenticated()
+    //         )
+    //         .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, authService),
+    //                        UsernamePasswordAuthenticationFilter.class);
+    //
+    //     return http.build();
+    // }
+    //
+    // /**
+    //  * 비밀번호 암호화 빈
+    //  */
+    // @Bean
+    // public PasswordEncoder passwordEncoder() {
+    //     return new BCryptPasswordEncoder();
+    // }
+    //
+    // /**
+    //  * 인증 매니저 빈
+    //  */
+    // @Bean
+    // public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    //     return config.getAuthenticationManager();
+    // }
 }
