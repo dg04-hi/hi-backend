@@ -6,7 +6,7 @@ spring:
     name: store-service
   
   datasource:
-    url: ${STORE_DB_URL:jdbc:postgresql://20.249.207.74:5432/hiorder_store}
+    url: ${STORE_DB_URL:jdbc:postgresql://20.249.154.116:5432/hiorder_store}
     username: ${STORE_DB_USERNAME:hiorder_user}
     password: ${STORE_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver

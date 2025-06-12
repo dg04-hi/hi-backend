@@ -6,7 +6,7 @@ spring:
     name: member-service
   
   datasource:
-    url: ${MEMBER_DB_URL:jdbc:postgresql://20.249.68.157:5432/hiorder_member}
+    url: ${MEMBER_DB_URL:jdbc:postgresql://20.249.152.184:5432/hiorder_member}
     username: ${MEMBER_DB_USERNAME:hiorder_user}
     password: ${MEMBER_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver

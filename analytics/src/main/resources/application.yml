@@ -6,7 +6,7 @@ spring:
     name: analytics-service
   
   datasource:
-    url: ${ANALYTICS_DB_URL:jdbc:postgresql://20.249.145.163:5432/hiorder_analytics}
+    url: ${ANALYTICS_DB_URL:jdbc:postgresql://20.249.162.125:5432/hiorder_analytics}
     username: ${ANALYTICS_DB_USERNAME:hiorder_user}
     password: ${ANALYTICS_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver
