@@ -9,5 +9,6 @@ public enum AuditAction {
     DELETE,
     ACCESS,
     LOGIN,
-    LOGOUT
+    LOGOUT,
+    VIEW
 }

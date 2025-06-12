@@ -2,6 +2,7 @@ package com.ktds.hi.common.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.common.constants.SecurityConstants;
+import com.ktds.hi.common.response.ApiResponse;
 import com.ktds.hi.common.response.ResponseCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
