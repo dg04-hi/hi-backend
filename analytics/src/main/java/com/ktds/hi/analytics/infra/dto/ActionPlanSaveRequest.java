@@ -1,14 +1,13 @@
 package com.ktds.hi.analytics.infra.dto;
 
+import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.List;
+
 
 /**
  * 실행 계획 저장 요청 DTO
