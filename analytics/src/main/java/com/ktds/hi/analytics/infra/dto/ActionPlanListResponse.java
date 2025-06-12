@@ -9,16 +9,18 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 실행 계획 완료 응답 DTO
+ * 실행 계획 목록 응답 DTO
  */
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActionPlanCompleteResponse {
+public class ActionPlanListResponse {
     
     private Long id;
+    private String title;
     private PlanStatus status;
+    private String period;
+    private LocalDateTime createdAt;
     private LocalDateTime completedAt;
-    private String note;
 }

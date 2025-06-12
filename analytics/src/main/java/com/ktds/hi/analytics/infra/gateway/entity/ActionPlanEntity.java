@@ -1,25 +1,32 @@
 package com.ktds.hi.analytics.infra.gateway.entity;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.analytics.biz.domain.PlanStatus;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
- * 실행 계획 엔티티 클래스
- * 데이터베이스 action_plans 테이블과 매핑되는 JPA 엔티티
+ * 실행 계획 엔티티
+ * 점주의 개선 실행 계획을 저장
  */
 @Entity
-@Table(name = "action_plans")
+@Table(name = "action_plan")
 @Getter
 @Builder
 @NoArgsConstructor
@@ -37,42 +44,39 @@ public class ActionPlanEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
     
-    @Column(nullable = false, length = 200)
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", length = 1000)
     private String description;
     
-    @Column(length = 50)
+    @Column(name = "period", length = 50)
     private String period;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @Builder.Default
-    private PlanStatus status = PlanStatus.PLANNED;
+    @Column(name = "status", nullable = false)
+    private PlanStatus status;
     
-    @Column(name = "feedback_ids_json", columnDefinition = "TEXT")
-    private String feedbackIdsJson;
+    @Column(name = "tasks", columnDefinition = "TEXT")
+    private String tasksJson;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "note", length = 1000)
     private String note;
-    
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
     
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
     
-    /**
-     * JSON 문자열을 List로 변환
-     */
-    public List<Long> getFeedbackIdsList() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(feedbackIdsJson, new TypeReference<List<Long>>() {});
-        } catch (Exception e) {
-            return List.of();
-        }
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @Index(name = "idx_action_plan_store_id", columnList = "store_id")
+    @Index(name = "idx_action_plan_user_id", columnList = "user_id")
+    @Index(name = "idx_action_plan_status", columnList = "status")
+    public static class Indexes {
     }
 }

@@ -1,5 +1,8 @@
 package com.ktds.hi.analytics.infra.gateway;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.analytics.biz.domain.Analytics;
 import com.ktds.hi.analytics.biz.domain.AiFeedback;
 import com.ktds.hi.analytics.biz.usecase.out.AnalyticsPort;
@@ -8,26 +11,28 @@ import com.ktds.hi.analytics.infra.gateway.entity.AiFeedbackEntity;
 import com.ktds.hi.analytics.infra.gateway.repository.AnalyticsJpaRepository;
 import com.ktds.hi.analytics.infra.gateway.repository.AiFeedbackJpaRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * 분석 리포지토리 어댑터 클래스
+ * 분석 리포지토리 어댑터 클래스 (완성버전)
  * Analytics Port를 구현하여 데이터 영속성 기능을 제공
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AnalyticsRepositoryAdapter implements AnalyticsPort {
     
     private final AnalyticsJpaRepository analyticsJpaRepository;
     private final AiFeedbackJpaRepository aiFeedbackJpaRepository;
+    private final ObjectMapper objectMapper;
     
     @Override
     public Optional<Analytics> findAnalyticsByStoreId(Long storeId) {
-        return analyticsJpaRepository.findByStoreId(storeId)
+        return analyticsJpaRepository.findLatestByStoreId(storeId)
                 .map(this::toDomain);
     }
     
@@ -40,7 +45,7 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
     
     @Override
     public Optional<AiFeedback> findAIFeedbackByStoreId(Long storeId) {
-        return aiFeedbackJpaRepository.findByStoreId(storeId)
+        return aiFeedbackJpaRepository.findLatestByStoreId(storeId)
                 .map(this::toAiFeedbackDomain);
     }
     
@@ -52,7 +57,7 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
     }
     
     /**
-     * Entity를 Domain으로 변환
+     * Analytics Entity를 Domain으로 변환
      */
     private Analytics toDomain(AnalyticsEntity entity) {
         return Analytics.builder()
@@ -61,13 +66,16 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
                 .totalReviews(entity.getTotalReviews())
                 .averageRating(entity.getAverageRating())
                 .sentimentScore(entity.getSentimentScore())
+                .positiveReviewRate(entity.getPositiveReviewRate())
+                .negativeReviewRate(entity.getNegativeReviewRate())
+                .lastAnalysisDate(entity.getLastAnalysisDate())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
     
     /**
-     * Domain을 Entity로 변환
+     * Analytics Domain을 Entity로 변환
      */
     private AnalyticsEntity toEntity(Analytics domain) {
         return AnalyticsEntity.builder()
@@ -76,8 +84,9 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
                 .totalReviews(domain.getTotalReviews())
                 .averageRating(domain.getAverageRating())
                 .sentimentScore(domain.getSentimentScore())
-                .createdAt(domain.getCreatedAt())
-                .updatedAt(domain.getUpdatedAt())
+                .positiveReviewRate(domain.getPositiveReviewRate())
+                .negativeReviewRate(domain.getNegativeReviewRate())
+                .lastAnalysisDate(domain.getLastAnalysisDate())
                 .build();
     }
     
@@ -89,16 +98,14 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
                 .id(entity.getId())
                 .storeId(entity.getStoreId())
                 .summary(entity.getSummary())
-                .sentiment(entity.getSentiment())
-                .positivePoints(entity.getPositivePointsJson() != null ? 
-                    parseJsonList(entity.getPositivePointsJson()) : List.of())
-                .negativePoints(entity.getNegativePointsJson() != null ? 
-                    parseJsonList(entity.getNegativePointsJson()) : List.of())
-                .recommendations(entity.getRecommendationsJson() != null ? 
-                    parseJsonList(entity.getRecommendationsJson()) : List.of())
-                .confidence(entity.getConfidence())
-                .analysisDate(entity.getAnalysisDate())
+                .positivePoints(parseJsonToList(entity.getPositivePointsJson()))
+                .improvementPoints(parseJsonToList(entity.getImprovementPointsJson()))
+                .recommendations(parseJsonToList(entity.getRecommendationsJson()))
+                .sentimentAnalysis(entity.getSentimentAnalysis())
+                .confidenceScore(entity.getConfidenceScore())
+                .generatedAt(entity.getGeneratedAt())
                 .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
     
@@ -110,34 +117,44 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
                 .id(domain.getId())
                 .storeId(domain.getStoreId())
                 .summary(domain.getSummary())
-                .sentiment(domain.getSentiment())
-                .positivePointsJson(toJsonString(domain.getPositivePoints()))
-                .negativePointsJson(toJsonString(domain.getNegativePoints()))
-                .recommendationsJson(toJsonString(domain.getRecommendations()))
-                .confidence(domain.getConfidence())
-                .analysisDate(domain.getAnalysisDate())
-                .createdAt(domain.getCreatedAt())
+                .positivePointsJson(parseListToJson(domain.getPositivePoints()))
+                .improvementPointsJson(parseListToJson(domain.getImprovementPoints()))
+                .recommendationsJson(parseListToJson(domain.getRecommendations()))
+                .sentimentAnalysis(domain.getSentimentAnalysis())
+                .confidenceScore(domain.getConfidenceScore())
+                .generatedAt(domain.getGeneratedAt())
                 .build();
     }
     
     /**
-     * JSON 문자열을 List로 파싱
+     * JSON 문자열을 List로 변환
      */
-    private List<String> parseJsonList(String json) {
-        // 실제로는 Jackson 등을 사용하여 파싱
-        if (json == null || json.isEmpty()) {
+    private List<String> parseJsonToList(String json) {
+        if (json == null || json.trim().isEmpty()) {
             return List.of();
         }
-        return Arrays.asList(json.replace("[", "").replace("]", "").replace("\"", "").split(","));
+        
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            log.warn("JSON 파싱 실패: {}", json, e);
+            return List.of();
+        }
     }
     
     /**
      * List를 JSON 문자열로 변환
      */
-    private String toJsonString(List<String> list) {
+    private String parseListToJson(List<String> list) {
         if (list == null || list.isEmpty()) {
             return "[]";
         }
-        return "[\"" + String.join("\",\"", list) + "\"]";
+        
+        try {
+            return objectMapper.writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            log.warn("JSON 직렬화 실패: {}", list, e);
+            return "[]";
+        }
     }
 }

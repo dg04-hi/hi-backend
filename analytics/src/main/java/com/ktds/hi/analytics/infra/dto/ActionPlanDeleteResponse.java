@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 실행 계획 삭제 응답 DTO
  */
@@ -14,6 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ActionPlanDeleteResponse {
     
-    private Boolean success;
-    private String message;
+    private Long planId;
+    private Boolean deleted;
+    private LocalDateTime deletedAt;
 }

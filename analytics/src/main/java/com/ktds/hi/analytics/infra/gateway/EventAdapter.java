@@ -1,6 +1,7 @@
 package com.ktds.hi.analytics.infra.gateway;
 
 import com.ktds.hi.analytics.biz.domain.ActionPlan;
+import com.ktds.hi.analytics.biz.domain.AnalysisType;
 import com.ktds.hi.analytics.biz.usecase.out.EventPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class EventAdapter implements EventPort {
     
     private final ApplicationEventPublisher eventPublisher;
-    
+
     @Override
     public void publishActionPlanCreatedEvent(ActionPlan actionPlan) {
         log.info("실행 계획 생성 이벤트 발행: planId={}, storeId={}", actionPlan.getId(), actionPlan.getStoreId());
