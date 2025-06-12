@@ -1,8 +1,9 @@
 package com.ktds.hi.member.config;
 
 
-import com.ktds.hi.member.config.JwtAuthenticationFilter;
-import com.ktds.hi.member.service.JwtTokenProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ktds.hi.common.security.JwtTokenProvider;
+import com.ktds.hi.common.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -26,7 +27,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Qualifier("memberJwtTokenProvider")
     private final JwtTokenProvider jwtTokenProvider;
 
     /**
@@ -54,7 +54,7 @@ public class SecurityConfig {
      */
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider);
+        return new JwtAuthenticationFilter(jwtTokenProvider,new ObjectMapper());
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.ktds.hi.member.service;
 
+import com.ktds.hi.common.security.JwtTokenProvider;
 import com.ktds.hi.member.dto.*;
 import com.ktds.hi.member.repository.entity.MemberEntity;
 import com.ktds.hi.member.repository.jpa.MemberRepository;
@@ -11,6 +12,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,7 +26,6 @@ public class AuthServiceImpl implements AuthService {
     
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-    @Qualifier("memberJwtTokenProvider")
     private final JwtTokenProvider jwtTokenProvider;
     private final SmsService smsService;
     private final RedisTemplate<String, String> redisTemplate;
@@ -41,9 +42,13 @@ public class AuthServiceImpl implements AuthService {
         }
         
         // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getRole());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId());
-        
+        String accessToken = jwtTokenProvider.createAccessToken(
+            member.getId().toString(),
+            Collections.singletonList(member.getRole())
+        );
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId().toString());
+
+
         // 리프레시 토큰 Redis 저장
         redisTemplate.opsForValue().set(
                 "refresh_token:" + member.getId(),
@@ -62,10 +67,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(LogoutRequest request) {
         // 리프레시 토큰에서 사용자 ID 추출
-        Long memberId = jwtTokenProvider.getMemberIdFromToken(request.getRefreshToken());
-        
-        // Redis에서 리프레시 토큰 삭제
-        redisTemplate.delete("refresh_token:" + memberId);
+        String userId = jwtTokenProvider.getUserIdFromToken(request.getRefreshToken());
+
+        if (userId != null) {
+            // Redis에서 리프레시 토큰 삭제
+            redisTemplate.delete("refresh_token:" + userId);
+        }
     }
     
     @Override
@@ -75,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("유효하지 않은 리프레시 토큰입니다");
         }
         
-        Long memberId = jwtTokenProvider.getMemberIdFromToken(refreshToken);
+        Long memberId = Long.parseLong(jwtTokenProvider.getUserIdFromToken(refreshToken));
         
         // Redis에서 리프레시 토큰 확인
         String storedToken = redisTemplate.opsForValue().get("refresh_token:" + memberId);
@@ -88,8 +95,12 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BusinessException("존재하지 않는 사용자입니다"));
         
         // 새 토큰 생성
-        String newAccessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getRole());
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(member.getId());
+        String newAccessToken = jwtTokenProvider.createAccessToken(
+            member.getId().toString(),
+            Collections.singletonList(member.getRole())
+        );
+
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getId().toString());
         
         // 새 리프레시 토큰 Redis 저장
         redisTemplate.opsForValue().set(
