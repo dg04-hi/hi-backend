@@ -13,7 +13,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:validate}
+      ddl-auto: ${JPA_DDL_AUTO:create}
     show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
@@ -44,6 +44,13 @@ ai-api:
 #    api-key: ${CLAUDE_API_KEY:}
 #    base-url: https://api.anthropic.com
 
+# 외부 서비스 설정
+external:
+  services:
+    review: ${EXTERNAL_SERVICES_REVIEW:http://localhost:8082}
+    store: ${EXTERNAL_SERVICES_STORE:http://localhost:8081}
+    member: ${EXTERNAL_SERVICES_MEMBER:http://localhost:8080}
+
 springdoc:
   api-docs:
     path: /api-docs
@@ -55,3 +62,24 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+# AI 서비스 설정
+ai:
+  azure:
+    cognitive:
+      endpoint: ${AI_AZURE_COGNITIVE_ENDPOINT:https://your-cognitive-service.cognitiveservices.azure.com}
+      key: ${AI_AZURE_COGNITIVE_KEY:your-cognitive-service-key}
+  openai:
+    api-key: ${AI_OPENAI_API_KEY:your-openai-api-key}
+
+# Azure Event Hub 설정
+azure:
+  eventhub:
+    connection-string: ${AZURE_EVENTHUB_CONNECTION_STRING:Endpoint=sb://your-eventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=your-key}
+    consumer-group: ${AZURE_EVENTHUB_CONSUMER_GROUP:analytics-consumer}
+    event-hubs:
+      review-events: ${AZURE_EVENTHUB_REVIEW_EVENTS:review-events}
+      ai-analysis-events: ${AZURE_EVENTHUB_AI_ANALYSIS_EVENTS:ai-analysis-events}
+  storage:
+    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:DefaultEndpointsProtocol=https;AccountName=yourstorageaccount;AccountKey=your-storage-key;EndpointSuffix=core.windows.net}
+    container-name: ${AZURE_STORAGE_CONTAINER_NAME:eventhub-checkpoints}

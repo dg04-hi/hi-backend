@@ -2,5 +2,7 @@ dependencies {
     implementation project(':common')
     
     // External API Integration
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
 }

@@ -16,7 +16,13 @@ import java.time.LocalDateTime;
  * AI가 생성한 피드백 정보를 저장
  */
 @Entity
-@Table(name = "ai_feedback")
+@Table(name = "ai_feedback",
+    indexes = {
+        @Index(name = "idx_ai_feedback_store_id", columnList = "store_id"),
+        @Index(name = "idx_ai_feedback_generated_at", columnList = "generated_at"),
+        @Index(name = "idx_ai_feedback_created_at", columnList = "created_at"),
+        @Index(name = "idx_ai_feedback_confidence_score", columnList = "confidence_score")
+    })
 @Getter
 @Builder
 @NoArgsConstructor
@@ -59,8 +65,5 @@ public class AiFeedbackEntity {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    @Index(name = "idx_ai_feedback_store_id", columnList = "store_id")
-    public static class Indexes {
-    }
+
 }

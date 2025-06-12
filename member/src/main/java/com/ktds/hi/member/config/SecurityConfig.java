@@ -3,6 +3,7 @@ package com.ktds.hi.member.config;
 import com.ktds.hi.member.service.JwtTokenProvider;
 import com.ktds.hi.member.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +24,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    
+
+    @Qualifier("memberJwtTokenProvider")
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
     

@@ -1,9 +1,12 @@
 package com.ktds.hi.analytics.infra.gateway;
 
+import static com.azure.ai.textanalytics.models.TextSentiment.*;
+
 import com.azure.ai.textanalytics.TextAnalyticsClient;
 import com.azure.ai.textanalytics.TextAnalyticsClientBuilder;
 import com.azure.ai.textanalytics.models.AnalyzeSentimentResult;
 import com.azure.ai.textanalytics.models.DocumentSentiment;
+import com.azure.ai.textanalytics.models.TextSentiment;
 import com.azure.core.credential.AzureKeyCredential;
 import com.ktds.hi.analytics.biz.domain.AiFeedback;
 import com.ktds.hi.analytics.biz.domain.SentimentType;
@@ -97,16 +100,19 @@ public class AIServiceAdapter implements AIServicePort {
     @Override
     public SentimentType analyzeSentiment(String content) {
         try {
-            AnalyzeSentimentResult result = textAnalyticsClient.analyzeSentiment(content);
-            DocumentSentiment sentiment = result.getDocumentSentiment();
-            
-            switch (sentiment) {
-                case POSITIVE:
-                    return SentimentType.POSITIVE;
-                case NEGATIVE:
-                    return SentimentType.NEGATIVE;
-                default:
-                    return SentimentType.NEUTRAL;
+            DocumentSentiment documentSentiment = textAnalyticsClient.analyzeSentiment(content);
+            TextSentiment sentiment = documentSentiment.getSentiment();
+
+            if (sentiment == TextSentiment.POSITIVE) {
+                return SentimentType.POSITIVE;
+            } else if (sentiment == TextSentiment.NEGATIVE) {
+                return SentimentType.NEGATIVE;
+            } else if (sentiment == TextSentiment.NEUTRAL) {
+                return SentimentType.NEUTRAL;
+            } else if (sentiment == TextSentiment.MIXED) {
+                return SentimentType.NEUTRAL; // MIXED는 NEUTRAL로 처리
+            } else {
+                return SentimentType.NEUTRAL;
             }
             
         } catch (Exception e) {
