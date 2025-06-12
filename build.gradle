@@ -1,13 +1,13 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.0' apply false
-    id 'io.spring.dependency-management' version '1.1.4' apply false
+    id 'io.spring.dependency-management' version '1.1.6' apply false
 }
 
 allprojects {
     group = 'com.ktds.hi'
     version = '1.0.0'
-    
+
     repositories {
         mavenCentral()
     }
@@ -17,49 +17,37 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
-    
+
     java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
+        sourceCompatibility = '21'
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
         }
     }
-    
+
+    // 공통 의존성
     dependencies {
-        // 공통 의존성
-        implementation 'org.springframework.boot:spring-boot-starter-web'
-        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-        implementation 'org.springframework.boot:spring-boot-starter-validation'
-        implementation 'org.springframework.boot:spring-boot-starter-security'
-        implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-        implementation 'org.springframework.boot:spring-boot-starter-actuator'
-        
-        // Swagger
-        implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-        
-        // JWT
-        implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-        runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-        runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
-        
-        // Database
-        runtimeOnly 'org.postgresql:postgresql'
-        
-        // Lombok
+        // Lombok (모든 서브 프로젝트에서 사용)
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
-        
-        // MapStruct
-        implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-        annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-        
-        // Test
+
+        // 테스트 (모든 서브 프로젝트에서 사용)
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        testImplementation 'org.springframework.security:spring-security-test'
-        testImplementation 'org.testcontainers:junit-jupiter'
-        testImplementation 'org.testcontainers:postgresql'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
-    
+
+    // 컴파일 옵션
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.compilerArgs += ['-parameters']
+    }
+
+    // 테스트 설정
     tasks.named('test') {
         useJUnitPlatform()
+        systemProperty 'spring.profiles.active', 'test'
     }
 }

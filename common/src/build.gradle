@@ -1,0 +1,54 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'Common utilities and shared components'
+
+dependencies {
+    // Spring Boot Starters
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+    api 'org.springframework.boot:spring-boot-starter-security'
+
+    // AOP (AspectJ) - 명시적 의존성 추가
+    api 'org.springframework.boot:spring-boot-starter-aop'
+    api 'org.aspectj:aspectjweaver:1.9.21'
+    api 'org.aspectj:aspectjrt:1.9.21'
+
+    // JSON Processing
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // JWT
+    api 'io.jsonwebtoken:jjwt-api:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // Apache Commons
+    api 'org.apache.commons:commons-lang3:3.13.0'
+    api 'org.apache.commons:commons-collections4:4.4'
+
+    // OpenAPI/Swagger
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // 테스트
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+// JAR 생성 설정 (plain jar도 생성)
+jar {
+    archiveBaseName = 'common'
+    archiveVersion = '1.0.0'
+    enabled = true
+}
+
+// bootJar 비활성화 (라이브러리이므로 실행 가능한 JAR 불필요)
+bootJar {
+    enabled = false
+}
