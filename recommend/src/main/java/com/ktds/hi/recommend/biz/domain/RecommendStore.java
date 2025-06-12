@@ -21,4 +21,7 @@ public class RecommendStore {
     private Double recommendScore;
     private Double distance;
     private String priceRange;
+
+    // 추가 필드
+    private RecommendType recommendType;
 }
