@@ -1,11 +1,14 @@
 package com.ktds.hi.member.domain;
 
+import jakarta.persistence.EntityListeners;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 회원 도메인 클래스
@@ -15,6 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Member {
     
     private Long id;

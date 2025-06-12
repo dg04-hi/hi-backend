@@ -1,5 +1,6 @@
 package com.ktds.hi.member.domain;
 
+import jakarta.persistence.EntityListeners;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -7,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * 취향 정보 도메인 클래스
@@ -16,6 +19,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Preference {
     
     private Long id;
