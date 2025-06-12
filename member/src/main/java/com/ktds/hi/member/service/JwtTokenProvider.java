@@ -105,7 +105,7 @@ public class JwtTokenProvider {
      * 토큰 파싱
      */
     private Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
+        return Jwts.parser()
                 .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)
