@@ -1,4 +1,4 @@
-package com.ktds.hi.analytics.infra.config;
+package com.ktds.hi.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
