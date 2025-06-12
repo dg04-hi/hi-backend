@@ -49,8 +49,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Check gradle wrapper files
+        run: |
+          echo "Checking gradle wrapper files..."
+          ls -la gradle/wrapper/
+          ls -la gradlew*
+          echo "Downloading gradle wrapper if needed..."
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "gradle-wrapper.jar not found, generating wrapper..."
+            gradle wrapper --gradle-version 8.13
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Verify gradle wrapper
+        run: |
+          echo "Testing gradle wrapper..."
+          ./gradlew --version
 
       - name: Build common module
         run: ./gradlew common:build -x test
