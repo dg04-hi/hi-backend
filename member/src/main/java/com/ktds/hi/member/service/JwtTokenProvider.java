@@ -17,7 +17,7 @@ import java.util.Date;
  * JWT 토큰 프로바이더 클래스
  * JWT 토큰 생성, 검증, 파싱 기능을 제공
  */
-@Component
+@Component("memberJwtTokenProvider")  // 기존: @Component
 @Slf4j
 public class JwtTokenProvider {
     

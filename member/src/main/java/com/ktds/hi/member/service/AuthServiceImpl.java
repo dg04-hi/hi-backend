@@ -6,6 +6,7 @@ import com.ktds.hi.member.repository.jpa.MemberRepository;
 import com.ktds.hi.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class AuthServiceImpl implements AuthService {
     
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    @Qualifier("memberJwtTokenProvider")
     private final JwtTokenProvider jwtTokenProvider;
     private final SmsService smsService;
     private final RedisTemplate<String, String> redisTemplate;
