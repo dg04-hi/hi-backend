@@ -15,7 +15,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.ktds.hi.common.entity",
         "com.ktds.hi.common.audit"
 })
-@EnableJpaRepositories(basePackages = "com.ktds.hi.common.repository")
+// @EnableJpaRepositories(basePackages = "com.ktds.hi.common.repository")
 public class CommonModuleConfiguration {
     // 설정 클래스는 어노테이션만으로도 충분
 }

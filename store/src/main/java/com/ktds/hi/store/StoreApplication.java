@@ -2,8 +2,11 @@ package com.ktds.hi.store;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -17,16 +20,24 @@ import org.springframework.web.client.RestTemplate;
         "com.ktds.hi.store",
         "com.ktds.hi.common"
 })
-
-@EnableJpaAuditing
+@EnableJpaRepositories(basePackages = {
+        "com.ktds.hi.store.infra.gateway.repository",  // 👈 MenuJpaRepository 패키지
+        "com.ktds.hi.common.repository"
+})
+@EntityScan(basePackages = {
+        "com.ktds.hi.store.infra.gateway.entity",
+        "com.ktds.hi.common.entity"
+})
+@EnableJpaAuditing(auditorAwareRef = "customAuditorAware")
 public class StoreApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(StoreApplication.class, args);
     }
 
-    // 👈 이 부분만 추가
+    // 기존 빈들...
     @Bean
+    @ConditionalOnMissingBean(RestTemplate.class)  // 👈 다른 빈이 없을 때만 생성
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }

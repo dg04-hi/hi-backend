@@ -1,6 +1,7 @@
 package com.ktds.hi.store.infra.gateway;
 
 import com.ktds.hi.store.biz.usecase.out.CachePort;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,6 +16,7 @@ import java.util.Optional;
  */
 @Component
 @RequiredArgsConstructor
+// @NoArgsConstructor(force = true)
 @Slf4j
 public class CacheAdapter implements CachePort {
     
