@@ -15,7 +15,7 @@ on:
       - 'common/**'
       - 'build.gradle'
       - 'settings.gradle'
-
+  workflow_dispatch:
 env:
   ACR_NAME: acrdigitalgarage03
   IMAGE_NAME: hiorder/analytics
