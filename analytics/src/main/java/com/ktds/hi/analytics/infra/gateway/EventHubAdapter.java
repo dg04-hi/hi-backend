@@ -1,6 +1,7 @@
 package com.ktds.hi.analytics.infra.gateway;
 
 import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.EventDataBatch;
 import com.azure.messaging.eventhubs.EventHubConsumerClient;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
 import com.azure.messaging.eventhubs.models.EventPosition;
@@ -9,13 +10,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.analytics.biz.domain.ActionPlan;
 import com.ktds.hi.analytics.biz.domain.AnalysisType;
 import com.ktds.hi.analytics.biz.usecase.out.EventPort;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,8 +72,11 @@ public class EventHubAdapter implements EventPort {
             
             String jsonData = objectMapper.writeValueAsString(eventData);
             EventData event = new EventData(jsonData);
-            
-            aiAnalysisEventProducer.send(event);
+
+            EventDataBatch batch = aiAnalysisEventProducer.createBatch();
+            if (batch.tryAdd(event)) {
+                aiAnalysisEventProducer.send(batch);  // EventDataBatch로 전송
+            }
             log.info("분석 완료 이벤트 발행: storeId={}, type={}", storeId, analysisType);
             
         } catch (Exception e) {
@@ -91,8 +96,13 @@ public class EventHubAdapter implements EventPort {
             
             String jsonData = objectMapper.writeValueAsString(eventData);
             EventData event = new EventData(jsonData);
-            
-            aiAnalysisEventProducer.send(event);
+
+            // ✅ 올바른 사용법
+            EventDataBatch batch = aiAnalysisEventProducer.createBatch();
+            if (batch.tryAdd(event)) {
+                aiAnalysisEventProducer.send(batch);  // EventDataBatch로 전송
+            }
+
             log.info("실행계획 생성 이벤트 발행: planId={}, storeId={}", 
                     actionPlan.getId(), actionPlan.getStoreId());
             
@@ -108,9 +118,16 @@ public class EventHubAdapter implements EventPort {
         log.info("리뷰 이벤트 수신 시작");
         
         try {
-            reviewEventConsumer.receiveFromPartition("0", EventPosition.earliest())
-                    .timeout(Duration.ofSeconds(30))
-                    .subscribe(this::handleReviewEvent);
+            Iterable<PartitionEvent> events = reviewEventConsumer.receiveFromPartition(
+                "0",                          // 파티션 ID
+                100,                          // 최대 이벤트 수
+                EventPosition.earliest(),     // 시작 위치
+                Duration.ofSeconds(30)        // 타임아웃
+            );
+
+            for (PartitionEvent partitionEvent : events) {
+                handleReviewEvent(partitionEvent);
+            }
             
         } catch (Exception e) {
             log.error("리뷰 이벤트 수신 중 오류 발생", e);
