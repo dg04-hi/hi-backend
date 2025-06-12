@@ -29,7 +29,7 @@ public class AuditLogger {
      */
     public void logCreate(Object entity) {
         try {
-            AuditLog auditLog = AuditLog.builder()
+                AuditLog auditLog = AuditLog.builder()
                     .entityType(entity.getClass().getSimpleName())
                     .entityId(extractEntityId(entity))
                     .action(AuditAction.CREATE)
