@@ -8,4 +8,8 @@ public class StoreNotFoundException extends AnalyticsException {
     public StoreNotFoundException(Long storeId) {
         super("STORE_NOT_FOUND", "매장을 찾을 수 없습니다: " + storeId);
     }
+
+    public StoreNotFoundException(String message) {
+        super("STORE_NOT_FOUND", message);
+    }
 }

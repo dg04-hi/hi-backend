@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class EventHubAdapter implements EventPort {
+public class EventHubAdapter {
     
     @Qualifier("reviewEventConsumer")
     private final EventHubConsumerClient reviewEventConsumer;
@@ -60,8 +60,7 @@ public class EventHubAdapter implements EventPort {
         reviewEventConsumer.close();
         aiAnalysisEventProducer.close();
     }
-    
-    @Override
+
     public void publishAnalysisCompletedEvent(Long storeId, AnalysisType analysisType) {
         try {
             Map<String, Object> eventData = new HashMap<>();
@@ -84,7 +83,7 @@ public class EventHubAdapter implements EventPort {
         }
     }
     
-    @Override
+
     public void publishActionPlanCreatedEvent(ActionPlan actionPlan) {
         try {
             Map<String, Object> eventData = new HashMap<>();
