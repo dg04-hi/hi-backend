@@ -1,6 +1,6 @@
 package com.ktds.hi.store.biz.usecase.out;
 
-import com.ktds.hi.store.biz.domain.Store;
+import com.ktds.hi.store.domain.Store;
 
 /**
  * 이벤트 포트 인터페이스

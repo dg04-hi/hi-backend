@@ -14,13 +14,16 @@ import java.util.stream.Collectors;
 /**
  * 메뉴 리포지토리 어댑터 클래스
  * Menu Repository Port를 구현하여 데이터 영속성 기능을 제공
+ *
+ * @author 하이오더 개발팀
+ * @version 1.0.0
  */
 @Component
 @RequiredArgsConstructor
 public class MenuRepositoryAdapter implements MenuRepositoryPort {
-    
+
     private final MenuJpaRepository menuJpaRepository;
-    
+
     @Override
     public List<Menu> findMenusByStoreId(Long storeId) {
         return menuJpaRepository.findByStoreId(storeId)
@@ -28,25 +31,59 @@ public class MenuRepositoryAdapter implements MenuRepositoryPort {
                 .map(this::toDomain)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public Optional<Menu> findMenuById(Long menuId) {
         return menuJpaRepository.findById(menuId)
                 .map(this::toDomain);
     }
-    
+
     @Override
     public Menu saveMenu(Menu menu) {
         MenuEntity entity = toEntity(menu);
         MenuEntity saved = menuJpaRepository.save(entity);
         return toDomain(saved);
     }
-    
+
     @Override
     public void deleteMenu(Long menuId) {
         menuJpaRepository.deleteById(menuId);
     }
-    
+
+    @Override
+    public List<Menu> findAvailableMenusByStoreId(Long storeId) {
+        return menuJpaRepository.findByStoreIdAndIsAvailableTrue(storeId)
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Menu> findMenusByStoreIdAndCategory(Long storeId, String category) {
+        return menuJpaRepository.findByStoreIdAndCategoryAndIsAvailableTrue(storeId, category)
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Menu> saveMenus(List<Menu> menus) {
+        List<MenuEntity> entities = menus.stream()
+                .map(this::toEntity)
+                .collect(Collectors.toList());
+
+        List<MenuEntity> savedEntities = menuJpaRepository.saveAll(entities);
+
+        return savedEntities.stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteMenusByStoreId(Long storeId) {
+        menuJpaRepository.deleteByStoreId(storeId);
+    }
+
     /**
      * Entity를 Domain으로 변환
      */
@@ -64,7 +101,7 @@ public class MenuRepositoryAdapter implements MenuRepositoryPort {
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
-    
+
     /**
      * Domain을 Entity로 변환
      */
