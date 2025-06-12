@@ -1,5 +1,8 @@
 package com.ktds.hi.recommend.biz.usecase.in;
 
+import java.util.List;
+
+import com.ktds.hi.recommend.infra.dto.response.PreferenceTagResponse;
 import com.ktds.hi.recommend.infra.dto.response.TasteAnalysisResponse;
 
 /**
@@ -17,4 +20,9 @@ public interface TasteAnalysisUseCase {
      * 취향 프로필 업데이트
      */
     void updateTasteProfile(Long memberId);
+
+    /**
+     * 가용한 취향 태그 목록 조회
+     */
+    List<PreferenceTagResponse> getAvailablePreferenceTags();
 }

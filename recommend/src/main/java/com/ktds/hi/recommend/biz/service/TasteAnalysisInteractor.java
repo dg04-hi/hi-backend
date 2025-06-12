@@ -1,9 +1,12 @@
 package com.ktds.hi.recommend.biz.service;
 
+import com.ktds.hi.recommend.biz.domain.PreferenceTag;
 import com.ktds.hi.recommend.biz.usecase.in.TasteAnalysisUseCase;
+import com.ktds.hi.recommend.biz.usecase.out.PreferenceTagRepository;
 import com.ktds.hi.recommend.biz.usecase.out.UserPreferenceRepository;
 import com.ktds.hi.recommend.biz.domain.TasteProfile;
 import com.ktds.hi.recommend.biz.domain.TasteCategory;
+import com.ktds.hi.recommend.infra.dto.response.PreferenceTagResponse;
 import com.ktds.hi.recommend.infra.dto.response.TasteAnalysisResponse;
 import com.ktds.hi.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 public class TasteAnalysisInteractor implements TasteAnalysisUseCase {
     
     private final UserPreferenceRepository userPreferenceRepository;
+    private final PreferenceTagRepository preferenceTagRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -74,6 +78,27 @@ public class TasteAnalysisInteractor implements TasteAnalysisUseCase {
         } catch (Exception e) {
             log.error("취향 프로필 업데이트 실패: memberId={}, error={}", memberId, e.getMessage(), e);
             throw new BusinessException("취향 프로필 업데이트 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<PreferenceTagResponse> getAvailablePreferenceTags() {
+        log.info("가용한 취향 태그 목록 조회");
+
+        try {
+            List<PreferenceTag> tags = preferenceTagRepository.findAllActiveTags();
+
+            return tags.stream()
+                .map(tag -> PreferenceTagResponse.builder()
+                    .tagName(tag.getTagName())
+                    .icon(tag.getIcon())
+                    .description(tag.getDescription())
+                    .build())
+                .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("취향 태그 목록 조회 중 오류 발생", e);
+            throw new BusinessException("취향 태그 목록 조회에 실패했습니다");
         }
     }
 }
