@@ -26,8 +26,8 @@ public class StoreDetailResponse {
     @Schema(description = "평점", example = "4.5")
     private Double rating;
 
-    @Schema(description = "거리(미터)", example = "500")
-    private Integer distance;
+    @Schema(description = "거리(미터)", example = "500.0")  // Double로 수정
+    private Double distance;
 
     @Schema(description = "태그 목록", example = "[\"맛집\", \"혼밥\", \"가성비\"]")
     private List<String> tags;

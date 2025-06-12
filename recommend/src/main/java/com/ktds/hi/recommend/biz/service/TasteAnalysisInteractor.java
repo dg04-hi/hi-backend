@@ -57,7 +57,7 @@ public class TasteAnalysisInteractor implements TasteAnalysisUseCase {
                 .categoryScores(categoryScores)
                 .preferredTags(profile.getPreferredTags())
                 .pricePreference(profile.getPricePreference())
-                .distancePreference(profile.getDistancePreference())
+                .distancePreference((double)profile.getDistancePreference())
                 .analysisDate(profile.getUpdatedAt())
                 .build();
     }

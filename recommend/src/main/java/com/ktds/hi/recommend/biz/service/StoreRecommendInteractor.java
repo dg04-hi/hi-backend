@@ -87,11 +87,11 @@ public class StoreRecommendInteractor implements StoreRecommendUseCase {
 
             List<RecommendStoreResponse> responses = convertToResponseList(pagedStores);
 
-            return PageResponse.of(responses, pageable.getPageNumber(), pageable.getPageSize(), stores.size());
+            return PageResponse.of(responses, pageable.getPageNumber(), pageable.getPageSize(), Long.valueOf(stores.size()));
 
         } catch (Exception e) {
             log.error("위치 기반 매장 추천 실패: lat={}, lng={}", latitude, longitude, e);
-            return PageResponse.of(getDefaultRecommendations(), 0, pageable.getPageSize(), 0);
+            return PageResponse.of(getDefaultRecommendations(), 0, pageable.getPageSize(), 0L);
         }
     }
 
@@ -217,7 +217,7 @@ public class StoreRecommendInteractor implements StoreRecommendUseCase {
                 .address("서울시 강남구 테헤란로 123")
                 .category("한식")
                 .rating(4.5)
-                .distance(500)
+                .distance(500.0)
                 .tags(Arrays.asList("맛있는", "친절한"))
                 .recommendReason("인기 매장입니다")
                 .build()
