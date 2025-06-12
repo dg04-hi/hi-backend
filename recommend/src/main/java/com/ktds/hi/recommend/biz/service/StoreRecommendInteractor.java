@@ -5,20 +5,18 @@ import com.ktds.hi.recommend.biz.usecase.out.*;
 import com.ktds.hi.recommend.biz.domain.*;
 import com.ktds.hi.recommend.infra.dto.request.RecommendStoreRequest;
 import com.ktds.hi.recommend.infra.dto.response.RecommendStoreResponse;
+import com.ktds.hi.recommend.infra.dto.response.StoreDetailResponse;
+import com.ktds.hi.common.dto.PageResponse;
 import com.ktds.hi.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-
-
-
+import java.util.Arrays;
 
 /**
  * 매장 추천 인터랙터 클래스
@@ -36,128 +34,193 @@ public class StoreRecommendInteractor implements StoreRecommendUseCase {
     private final UserPreferenceRepository userPreferenceRepository;
 
     @Override
-    public List<RecommendStoreResponse> recommendStores(Long memberId, RecommendStoreRequest request) {
-        // 사용자 취향 프로필 조회
-        TasteProfile tasteProfile = userPreferenceRepository.getMemberPreferences(memberId)
-            .orElseThrow(() -> new BusinessException("사용자 취향 정보를 찾을 수 없습니다. 취향 등록을 먼저 해주세요."));
+    public List<RecommendStoreResponse> recommendPersonalizedStores(Long memberId, RecommendStoreRequest request) {
+        try {
+            // 사용자 취향 프로필 조회
+            TasteProfile tasteProfile = userPreferenceRepository.getMemberPreferences(memberId)
+                .orElse(createDefaultTasteProfile(memberId));
 
-        // AI 기반 추천
-        Map<String, Object> preferences = Map.of(
-            "categories", tasteProfile.getPreferredCategories(),
-            "tags", tasteProfile.getPreferredTags(),
-            "pricePreference", tasteProfile.getPricePreference(),
-            "distancePreference", tasteProfile.getDistancePreference(),
-            "latitude", request.getLatitude(),
-            "longitude", request.getLongitude()
-        );
+            // 위치 기반 매장 검색
+            List<RecommendStore> nearbyStores = locationRepository.findStoresWithinDistance(
+                request.getLatitude(),
+                request.getLongitude(),
+                request.getRadius()
+            );
 
-        List<RecommendStore> aiRecommendStores = aiRecommendRepository.recommendStoresByAI(memberId, preferences);
+            // 취향 기반 필터링 및 점수 계산
+            List<RecommendStore> recommendedStores = aiRecommendRepository.filterByPreferences(
+                nearbyStores,
+                tasteProfile,
+                request.getTags()
+            );
 
-        // 위치 기반 추천 결합
-        List<RecommendStore> locationStores = locationRepository.findStoresWithinRadius(
-            request.getLatitude(), request.getLongitude(), request.getRadius());
+            // 추천 로그 저장
+            recommendRepository.logRecommendation(memberId,
+                recommendedStores.stream().map(RecommendStore::getStoreId).toList(),
+                "개인화추천"
+            );
 
-        // 추천 결과 통합 및 점수 계산
-        List<RecommendStore> combinedStores = combineRecommendations(aiRecommendStores, locationStores, tasteProfile);
+            return convertToResponseList(recommendedStores);
 
-        // 추천 히스토리 저장
-        RecommendHistory history = RecommendHistory.builder()
-            .memberId(memberId)
-            .recommendedStoreIds(combinedStores.stream().map(RecommendStore::getStoreId).collect(Collectors.toList()))
-            .recommendType(RecommendType.TASTE_BASED)
-            .criteria("취향 + AI + 위치 기반 통합 추천")
-            .createdAt(LocalDateTime.now())
-            .build();
-
-        recommendRepository.saveRecommendHistory(history);
-
-        log.info("매장 추천 완료: memberId={}, 추천 매장 수={}", memberId, combinedStores.size());
-
-        return combinedStores.stream()
-            .map(this::toRecommendStoreResponse)
-            .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("개인화 매장 추천 실패: memberId={}", memberId, e);
+            return getDefaultRecommendations();
+        }
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<RecommendStoreResponse> recommendStoresByLocation(Double latitude, Double longitude, Integer radius) {
-        List<RecommendStore> stores = locationRepository.findStoresWithinRadius(latitude, longitude, radius);
+    public PageResponse<RecommendStoreResponse> recommendStoresByLocation(Double latitude, Double longitude, Integer radius, String category, Pageable pageable) {
+        try {
+            List<RecommendStore> stores = locationRepository.findStoresWithinDistance(latitude, longitude, radius);
 
-        return stores.stream()
-            .map(store -> store.updateRecommendReason("위치 기반 추천"))
-            .map(this::toRecommendStoreResponse)
-            .collect(Collectors.toList());
+            // 카테고리 필터링
+            if (category != null && !category.isEmpty()) {
+                stores = stores.stream()
+                    .filter(store -> category.equals(store.getCategory()))
+                    .toList();
+            }
+
+            // 페이징 처리
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), stores.size());
+            List<RecommendStore> pagedStores = stores.subList(start, end);
+
+            List<RecommendStoreResponse> responses = convertToResponseList(pagedStores);
+
+            return PageResponse.of(responses, pageable.getPageNumber(), pageable.getPageSize(), stores.size());
+
+        } catch (Exception e) {
+            log.error("위치 기반 매장 추천 실패: lat={}, lng={}", latitude, longitude, e);
+            return PageResponse.of(getDefaultRecommendations(), 0, pageable.getPageSize(), 0);
+        }
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<RecommendStoreResponse> recommendPopularStores(String category, Integer limit) {
-        // Mock 구현 - 실제로는 인기도 기반 쿼리 필요
-        List<RecommendStore> popularStores = List.of(
-            RecommendStore.builder()
+        try {
+            List<RecommendStore> popularStores = recommendRepository.findPopularStores(category, limit);
+            return convertToResponseList(popularStores);
+
+        } catch (Exception e) {
+            log.error("인기 매장 추천 실패: category={}", category, e);
+            return getDefaultRecommendations();
+        }
+    }
+
+    @Override
+    public StoreDetailResponse getRecommendedStoreDetail(Long storeId, Long memberId) {
+        try {
+            RecommendStore store = recommendRepository.findStoreById(storeId)
+                .orElseThrow(() -> new BusinessException("매장을 찾을 수 없습니다."));
+
+            // 클릭 로그 저장 (조회도 클릭으로 간주)
+            if (memberId != null) {
+                recommendRepository.logStoreClick(memberId, storeId);
+            }
+
+            // AI 요약 정보 조회
+            String aiSummary = aiRecommendRepository.getStoreSummary(storeId);
+
+            // 개인화 추천 이유 생성
+            String personalizedReason = "";
+            if (memberId != null) {
+                TasteProfile tasteProfile = userPreferenceRepository.getMemberPreferences(memberId).orElse(null);
+                if (tasteProfile != null) {
+                    personalizedReason = generatePersonalizedReason(store, tasteProfile);
+                }
+            }
+
+            return StoreDetailResponse.builder()
+                .storeId(store.getStoreId())
+                .storeName(store.getStoreName())
+                .address(store.getAddress())
+                .category(store.getCategory())
+                .rating(store.getRating())
+                .distance(store.getDistance())
+                .tags(store.getTags())
+                .aiSummary(aiSummary)
+                .personalizedReason(personalizedReason)
+                .build();
+
+        } catch (Exception e) {
+            log.error("매장 상세 조회 실패: storeId={}", storeId, e);
+            throw new BusinessException("매장 상세 정보를 조회할 수 없습니다.");
+        }
+    }
+
+    @Override
+    public void logRecommendClick(Long memberId, Long storeId) {
+        try {
+            recommendRepository.logStoreClick(memberId, storeId);
+            log.info("추천 클릭 로그 저장: memberId={}, storeId={}", memberId, storeId);
+        } catch (Exception e) {
+            log.error("추천 클릭 로그 저장 실패: memberId={}, storeId={}", memberId, storeId, e);
+        }
+    }
+
+    // 기본 취향 프로필 생성
+    private TasteProfile createDefaultTasteProfile(Long memberId) {
+        return TasteProfile.builder()
+            .memberId(memberId)
+            .cuisinePreferences(Arrays.asList("한식", "중식", "일식"))
+            .priceRange("중간")
+            .distancePreference(3000)
+            .tasteTags(Arrays.asList("맛있는", "친절한"))
+            .build();
+    }
+
+    // 개인화 추천 이유 생성
+    private String generatePersonalizedReason(RecommendStore store, TasteProfile tasteProfile) {
+        StringBuilder reason = new StringBuilder();
+
+        // 취향 태그 매칭
+        List<String> matchingTags = store.getTags().stream()
+            .filter(tasteProfile.getTasteTags()::contains)
+            .toList();
+
+        if (!matchingTags.isEmpty()) {
+            reason.append("당신이 좋아하는 '").append(String.join(", ", matchingTags))
+                .append("' 태그와 일치합니다. ");
+        }
+
+        // 가격대 매칭
+        if (tasteProfile.getPriceRange().equals(store.getPriceRange())) {
+            reason.append("선호하시는 ").append(tasteProfile.getPriceRange())
+                .append(" 가격대 매장입니다. ");
+        }
+
+        return reason.toString().trim();
+    }
+
+    // 응답 변환
+    private List<RecommendStoreResponse> convertToResponseList(List<RecommendStore> stores) {
+        return stores.stream()
+            .map(store -> RecommendStoreResponse.builder()
+                .storeId(store.getStoreId())
+                .storeName(store.getStoreName())
+                .address(store.getAddress())
+                .category(store.getCategory())
+                .rating(store.getRating())
+                .distance(store.getDistance())
+                .tags(store.getTags())
+                .recommendReason(store.getRecommendReason())
+                .build())
+            .toList();
+    }
+
+    // 기본 추천 목록 (에러 발생 시)
+    private List<RecommendStoreResponse> getDefaultRecommendations() {
+        return Arrays.asList(
+            RecommendStoreResponse.builder()
                 .storeId(1L)
-                .storeName("인기 매장 1")
-                .address("서울시 강남구")
-                .category(category)
+                .storeName("맛집 플레이스")
+                .address("서울시 강남구 테헤란로 123")
+                .category("한식")
                 .rating(4.5)
-                .reviewCount(100)
-                .recommendScore(95.0)
-                .recommendType(RecommendType.POPULARITY_BASED)
-                .recommendReason("높은 평점과 많은 리뷰")
+                .distance(500)
+                .tags(Arrays.asList("맛있는", "친절한"))
+                .recommendReason("인기 매장입니다")
                 .build()
         );
-
-        return popularStores.stream()
-            .limit(limit != null ? limit : 10)
-            .map(this::toRecommendStoreResponse)
-            .collect(Collectors.toList());
-    }
-
-    /**
-     * 추천 결과 통합 및 점수 계산
-     */
-    private List<RecommendStore> combineRecommendations(List<RecommendStore> aiStores,
-        List<RecommendStore> locationStores,
-        TasteProfile profile) {
-        // AI 추천과 위치 기반 추천을 통합하여 최종 점수 계산
-        // 실제로는 더 복잡한 로직이 필요
-
-        return aiStores.stream()
-            .map(store -> store.updateRecommendScore(
-                calculateFinalScore(store, profile)
-            ))
-            .sorted((s1, s2) -> Double.compare(s2.getRecommendScore(), s1.getRecommendScore()))
-            .limit(20)
-            .collect(Collectors.toList());
-    }
-
-    /**
-     * 최종 추천 점수 계산
-     */
-    private Double calculateFinalScore(RecommendStore store, TasteProfile profile) {
-        double baseScore = store.getRecommendScore() != null ? store.getRecommendScore() : 0.0;
-        double ratingScore = store.getRating() != null ? store.getRating() * 10 : 0.0;
-        double reviewScore = store.getReviewCount() != null ? Math.min(store.getReviewCount() * 0.1, 10) : 0.0;
-        double distanceScore = store.getDistance() != null ? Math.max(0, 10 - store.getDistance() / 1000) : 0.0;
-
-        return (baseScore * 0.4) + (ratingScore * 0.3) + (reviewScore * 0.2) + (distanceScore * 0.1);
-    }
-
-    /**
-     * 도메인을 응답 DTO로 변환
-     */
-    private RecommendStoreResponse toRecommendStoreResponse(RecommendStore store) {
-        return RecommendStoreResponse.builder()
-            .storeId(store.getStoreId())
-            .storeName(store.getStoreName())
-            .address(store.getAddress())
-            .category(store.getCategory())
-            .tags(store.getTags())
-            .rating(store.getRating())
-            .reviewCount(store.getReviewCount())
-            .distance(store.getDistance())
-            .recommendScore(store.getRecommendScore())
-            .recommendReason(store.getRecommendReason())
-            .build();
     }
 }

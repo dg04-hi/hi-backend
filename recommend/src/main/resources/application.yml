@@ -17,21 +17,24 @@ spring:
     password: ${RECOMMEND_DB_PASSWORD:hiorder_pass}
     driver-class-name: org.postgresql.Driver
     hikari:
-      connection-timeout: 20000
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 300000
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
       pool-name: RecommendHikariCP
   
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:validate}
+      ddl-auto: ${JPA_DDL_AUTO:create}
     show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: ${JPA_FORMAT_SQL:true}
+        show_sql: ${JPA_SHOW_SQL:false}
+        use_sql_comments: ${JPA_USE_SQL_COMMENTS:true}
         jdbc:
           batch_size: 20
         order_inserts: true
@@ -48,9 +51,9 @@ spring:
       database: ${REDIS_DATABASE:0}
       lettuce:
         pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
+          max-active: ${REDIS_POOL_MAX_ACTIVE:8}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:2}
           max-wait: -1ms
         shutdown-timeout: 100ms
 
@@ -108,43 +111,19 @@ resilience4j:
         max-attempts: 3
         wait-duration: 1000
 
-# 추천 알고리즘 설정
-recommend:
-  algorithm:
-    distance-weight: 0.3
-    rating-weight: 0.3
-    taste-weight: 0.4
-    max-distance: 50000  # 50km
-    default-radius: 5000  # 5km
-  cache:
-    ttl:
-      recommendation: 30m
-      store-detail: 1h
-      taste-analysis: 6h
-      popular-stores: 2h
-  batch:
-    size: 100
-    max-concurrent: 5
 
 # Actuator 설정
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,configprops
-      base-path: /actuator
+        include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: when-authorized
-      show-components: always
-    metrics:
-      enabled: true
+      show-details: always
   metrics:
     export:
       prometheus:
-        enabled: true
-    tags:
-      application: ${spring.application.name}
 
 # Swagger/OpenAPI 설정
 springdoc:
@@ -188,6 +167,14 @@ security:
     allowed-headers: "*"
     allow-credentials: true
 
+recommend:
+  cache:
+    recommendation-ttl: ${RECOMMENDATION_CACHE_TTL:1800}
+    user-preference-ttl: ${USER_PREFERENCE_CACHE_TTL:3600}
+  algorithm:
+    max-recommendations: ${MAX_RECOMMENDATIONS:20}
+    default-radius: ${DEFAULT_SEARCH_RADIUS:5000}
+    max-radius: ${MAX_SEARCH_RADIUS:10000}
 ---
 # Local 환경 설정
 spring:
