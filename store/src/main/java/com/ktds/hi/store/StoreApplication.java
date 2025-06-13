@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.client.RestTemplate;
@@ -16,18 +17,17 @@ import org.springframework.web.client.RestTemplate;
  * @author 하이오더 개발팀
  * @version 1.0.0
  */
-@SpringBootApplication(scanBasePackages = {
-        "com.ktds.hi.store",
-        "com.ktds.hi.common"
-})
-@EnableJpaRepositories(basePackages = {
-        "com.ktds.hi.store.infra.gateway.repository",  // 👈 MenuJpaRepository 패키지
-        "com.ktds.hi.common.repository"
+@SpringBootApplication
+@ComponentScan(basePackages = {
+    "com.ktds.hi.store",
+    "com.ktds.hi.common",
+    "com.ktds.hi.common.audit"  // 👈 audit 패키지 명시적 추가
 })
 @EntityScan(basePackages = {
         "com.ktds.hi.store.infra.gateway.entity",
         "com.ktds.hi.common.entity"
 })
+@EnableJpaRepositories(basePackages = {"com.ktds.hi.store.infra.gateway.repository"})
 @EnableJpaAuditing(auditorAwareRef = "customAuditorAware")
 public class StoreApplication {
 

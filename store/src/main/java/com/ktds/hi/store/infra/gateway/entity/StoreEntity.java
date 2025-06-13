@@ -40,10 +40,10 @@ public class StoreEntity {
     @Column(nullable = false, length = 300)
     private String address;
 
-    @Column(precision = 10, scale = 8)
+    @Column
     private Double latitude;
 
-    @Column(precision = 11, scale = 8)
+    @Column
     private Double longitude;
 
     @Column(length = 500)
@@ -65,7 +65,7 @@ public class StoreEntity {
     @Builder.Default
     private String status = "INACTIVE";
 
-    @Column(precision = 3, scale = 2)
+    @Column
     @Builder.Default
     private Double rating = 0.0;
 
