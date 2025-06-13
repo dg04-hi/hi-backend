@@ -1,4 +1,4 @@
-name: Build and Deploy Member Service
+name: Analytics CI
 
 on:
   push:
@@ -6,11 +6,17 @@ on:
     paths:
       - 'member/**'
       - 'common/**'
+      - 'build.gradle'
+      - 'settings.gradle'
   pull_request:
     branches: [ main ]
     paths:
       - 'member/**'
       - 'common/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+  workflow_dispatch:
+
 env:
   ACR_NAME: acrdigitalgarage03
   IMAGE_NAME: hiorder/member
@@ -18,7 +24,7 @@ env:
   MANIFEST_FILE_PATH: member/deployment.yml
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,6 +37,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.13'
+
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -41,44 +52,130 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+      - name: Generate Gradle Wrapper
+        run: |
+          echo "Generating gradle wrapper..."
+          gradle wrapper --gradle-version 8.13
+          chmod +x gradlew
+          echo "Testing gradle wrapper..."
+          ./gradlew --version
 
-      - name: Build with Gradle
-        run: ./gradlew member:build -x test --no-daemon
+      - name: Build analytics module with dependencies
+        run: ./gradlew member:build -x test
 
-      - name: Run tests
-        run: ./gradlew member:test --no-daemon
+      - name: Run analytics tests
+        run: ./gradlew member:test
+
+      - name: Generate build timestamp
+        id: timestamp
+        run: echo "BUILD_TIME=$(date +'%y%m%d%H%M')" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Azure Container Registry
-        uses: docker/login-action@v3
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
         with:
-          registry: ${{ env.ACR_NAME }}.azurecr.io
+          login-server: ${{ env.ACR_NAME }}.azurecr.io
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ steps.timestamp.outputs.BUILD_TIME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./member/Dockerfile
+          file: ./analytics/Dockerfile
+          platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            SERVICE_NAME=member
+          tags: |
+            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ steps.timestamp.outputs.BUILD_TIME }}
+            ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Output image tags
+        run: |
+          echo "🎉 Image pushed successfully!"
+          echo "📦 Image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}"
+          echo "🏷️  Tags: ${{ steps.timestamp.outputs.BUILD_TIME }}, latest"
+
+      # 🚀 Manifest 레포지토리 업데이트 단계 추가
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPO }}
+          token: ${{ secrets.MANIFEST_REPO_TOKEN }}
+          path: manifest-repo
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update deployment image tag
+        run: |
+          cd manifest-repo
+          NEW_IMAGE="${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ steps.timestamp.outputs.BUILD_TIME }}"
+          echo "Updating image tag to: $NEW_IMAGE"
+          
+          # deployment.yml에서 이미지 태그 업데이트
+          yq eval '.spec.template.spec.containers[0].image = "'$NEW_IMAGE'"' -i ${{ env.MANIFEST_FILE_PATH }}
+          
+          # 변경사항 확인
+          echo "Updated deployment.yml:"
+          cat ${{ env.MANIFEST_FILE_PATH }}
+
+      - name: Commit and push changes
+        run: |
+          cd manifest-repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add ${{ env.MANIFEST_FILE_PATH }}
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🚀 Update analytics image tag to ${{ steps.timestamp.outputs.BUILD_TIME }}
+          
+            - Updated by: ${{ github.actor }}
+            - Triggered by: ${{ github.event_name }}
+            - Source commit: ${{ github.sha }}
+            - Build time: ${{ steps.timestamp.outputs.BUILD_TIME }}"
+          
+            git push
+            echo "✅ Successfully updated manifest repository"
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: member-test-results
+          path: member/build/reports/tests/test/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: member-jar
+          path: member/build/libs/*.jar
+
+      # 🎯 배포 완료 알림
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "## 🚀 Analytics Service Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Container Image" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: ${{ env.ACR_NAME }}.azurecr.io" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ steps.timestamp.outputs.BUILD_TIME }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔄 ArgoCD Sync" >> $GITHUB_STEP_SUMMARY
+          echo "- **Manifest Repo**: https://github.com/${{ env.MANIFEST_REPO }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Updated File**: ${{ env.MANIFEST_FILE_PATH }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ArgoCD will automatically sync the new image**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⏱️ Build Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered By**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
