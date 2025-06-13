@@ -37,7 +37,7 @@ public class SecurityConfig {
      * JWT 인증 방식을 사용하고 세션은 무상태로 관리
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, ConditionsReportEndpoint conditionsReportEndpoint) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
