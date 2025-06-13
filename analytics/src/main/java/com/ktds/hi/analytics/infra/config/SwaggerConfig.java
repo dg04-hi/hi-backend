@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,32 +15,24 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class SwaggerConfig {
-    
+
     @Bean
     public OpenAPI openAPI() {
+        final String securitySchemeName = "Bearer Authentication";
+
         return new OpenAPI()
-            .info(new Info()
-                .title("Analytics Service API")
-                .description("하이오더 분석 서비스 API 문서")
-                .version("1.0.0"));
-    }
-    /**
-     * JWT Bearer 토큰을 위한 Security Scheme 생성
-     */
-    private SecurityScheme createAPIKeyScheme() {
-        return new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT")
-                .in(SecurityScheme.In.HEADER)
-                .name("Authorization")
-                .description("""
-                        JWT 토큰을 입력하세요
-                        
-                        사용법:
-                        1. 로그인 API로 토큰 발급
-                        2. Bearer 접두사 없이 토큰만 입력
-                        3. 예: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOi...
-                        """);
+                .addServersItem(new Server().url("/"))
+                .info(new Info()
+                        .title("하이오더 AI 분석 서비스 API")
+                        .description("데이터 수집, AI 피드백 생성, 분석 조회, 실행 계획 관리 등 AI 분석 관련 기능을 제공하는 API")
+                        .version("1.0.0"))
+                .addSecurityItem(new SecurityRequirement()
+                        .addList(securitySchemeName))
+                .components(new Components()
+                        .addSecuritySchemes(securitySchemeName, new SecurityScheme()
+                                .name(securitySchemeName)
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")));
     }
 }
