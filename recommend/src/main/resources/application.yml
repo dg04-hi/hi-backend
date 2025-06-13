@@ -43,7 +43,9 @@ spring:
         order_inserts: true
         order_updates: true
     open-in-view: false
-  
+
+
+
   # Redis 설정 (올바른 구조)
   data:
     redis:
