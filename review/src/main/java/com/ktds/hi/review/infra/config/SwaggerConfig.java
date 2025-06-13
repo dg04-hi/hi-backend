@@ -2,6 +2,7 @@ package com.ktds.hi.review.infra.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,26 @@ public class SwaggerConfig {
                         .title("하이오더 리뷰 관리 서비스 API")
                         .description("리뷰 작성, 조회, 삭제, 반응, 댓글 등 리뷰 관련 기능을 제공하는 API")
                         .version("1.0.0"));
+    }
+
+    /**
+     * JWT Bearer 토큰을 위한 Security Scheme 생성
+     */
+    private SecurityScheme createAPIKeyScheme() {
+        return new SecurityScheme()
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT")
+                .in(SecurityScheme.In.HEADER)
+                .name("Authorization")
+                .description("""
+                        JWT 토큰을 입력하세요
+                        
+                        사용법:
+                        1. 로그인 API로 토큰 발급
+                        2. Bearer 접두사 없이 토큰만 입력
+                        3. 예: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOi...
+                        """);
     }
 }
 
