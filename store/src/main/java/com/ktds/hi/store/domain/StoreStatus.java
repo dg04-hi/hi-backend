@@ -18,4 +18,19 @@ public enum StoreStatus {
     public String getDescription() {
         return description;
     }
+
+    /**
+     * 문자열로부터 StoreStatus 변환
+     */
+    public static StoreStatus fromString(String status) {
+        if (status == null) {
+            return ACTIVE; // 기본값
+        }
+
+        try {
+            return StoreStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ACTIVE; // 기본값
+        }
+    }
 }

@@ -4,6 +4,7 @@ package com.ktds.hi.store.domain;
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 매장 도메인 엔티티
@@ -29,6 +30,8 @@ public class Store {
     private Double rating;
     private Integer reviewCount;
     private StoreStatus status;
+    private List<String> tags;          // 추가
+    private String imageUrl;            // 추가
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

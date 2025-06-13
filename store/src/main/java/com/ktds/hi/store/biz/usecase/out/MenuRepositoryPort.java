@@ -1,6 +1,6 @@
 package com.ktds.hi.store.biz.usecase.out;
 
-import com.ktds.hi.store.biz.domain.Menu;
+import com.ktds.hi.store.domain.Menu;
 
 import java.util.List;
 import java.util.Optional;
