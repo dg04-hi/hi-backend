@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 캐시 어댑터 클래스
@@ -32,29 +34,45 @@ public class CacheAdapter implements CachePort {
             return Optional.empty();
         }
     }
-    
+
     @Override
-    public void putStoreCache(String key, Object value, Duration ttl) {
+    public void putStoreCache(String key, Object value, long ttlSeconds) {
         try {
-            redisTemplate.opsForValue().set(key, value, ttl);
-            log.debug("매장 캐시 저장 완료: key={}, ttl={}분", key, ttl.toMinutes());
+            redisTemplate.opsForValue().set(key, value, ttlSeconds, TimeUnit.SECONDS);
+            log.debug("캐시 저장: key={}, ttl={}초", key, ttlSeconds);
         } catch (Exception e) {
-            log.error("매장 캐시 저장 실패: key={}, error={}", key, e.getMessage());
+            log.warn("캐시 저장 실패: key={}, error={}", key, e.getMessage());
         }
     }
-    
+
     @Override
-    public void invalidateStoreCache(Long storeId) {
+    public void invalidateStoreCache(Object key) {
         try {
-            // 매장 관련 모든 캐시 키 패턴 삭제
-            String storeDetailKey = "store_detail:" + storeId;
-            String myStoresKey = "my_stores:*";
-            
-            redisTemplate.delete(storeDetailKey);
-            
-            log.debug("매장 캐시 무효화 완료: storeId={}", storeId);
+            if (key instanceof Long) {
+                // 매장 ID로 특정 매장 캐시 삭제
+                Long storeId = (Long) key;
+                String storeDetailKey = "store_detail:" + storeId;
+                redisTemplate.delete(storeDetailKey);
+                log.debug("매장 캐시 무효화 완료: storeId={}", storeId);
+
+            } else if (key instanceof String) {
+                // 패턴으로 캐시 삭제
+                String pattern = key.toString();
+                Set<String> keys = redisTemplate.keys(pattern);
+                if (keys != null && !keys.isEmpty()) {
+                    redisTemplate.delete(keys);
+                }
+                log.debug("패턴 캐시 무효화 완료: pattern={}", pattern);
+
+            } else {
+                // 기본적으로 toString()으로 키 생성
+                String cacheKey = "stores:" + key.toString();
+                redisTemplate.delete(cacheKey);
+                log.debug("캐시 무효화 완료: key={}", key);
+            }
+
         } catch (Exception e) {
-            log.error("매장 캐시 무효화 실패: storeId={}, error={}", storeId, e.getMessage());
+            log.error("캐시 무효화 실패: key={}, error={}", key, e.getMessage());
         }
     }
 }

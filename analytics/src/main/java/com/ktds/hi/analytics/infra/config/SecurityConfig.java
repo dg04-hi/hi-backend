@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+
 	private final CorsConfigurationSource corsConfigurationSource;
 
 	@Bean

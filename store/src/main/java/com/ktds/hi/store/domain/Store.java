@@ -1,24 +1,20 @@
+// store/src/main/java/com/ktds/hi/store/biz/domain/Store.java
 package com.ktds.hi.store.domain;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 매장 도메인 클래스
- * 매장 정보를 담는 도메인 객체
+ * 매장 도메인 엔티티
+ * Clean Architecture의 Domain Layer
  *
  * @author 하이오더 개발팀
  * @version 1.0.0
  */
 @Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class Store {
 
     private Long id;
@@ -27,160 +23,89 @@ public class Store {
     private String address;
     private Double latitude;
     private Double longitude;
-    private String category;
     private String description;
     private String phone;
     private String operatingHours;
-    private List<String> tags;
-    private StoreStatus status;
+    private String category;
     private Double rating;
     private Integer reviewCount;
-    private String imageUrl;
+    private StoreStatus status;
+    private List<String> tags;          // 추가
+    private String imageUrl;            // 추가
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     /**
      * 매장 기본 정보 업데이트
      */
-    public Store updateBasicInfo(String storeName, String address, String description,
-                                 String phone, String operatingHours) {
-        return Store.builder()
-                .id(this.id)
-                .ownerId(this.ownerId)
-                .storeName(storeName)
-                .address(address)
-                .latitude(this.latitude)
-                .longitude(this.longitude)
-                .category(this.category)
-                .description(description)
-                .phone(phone)
-                .operatingHours(operatingHours)
-                .tags(this.tags)
-                .status(this.status)
-                .rating(this.rating)
-                .reviewCount(this.reviewCount)
-                .imageUrl(this.imageUrl)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+    public void updateBasicInfo(String storeName, String address, String description,
+                                String phone, String operatingHours) {
+        this.storeName = storeName;
+        this.address = address;
+        this.description = description;
+        this.phone = phone;
+        this.operatingHours = operatingHours;
+        this.updatedAt = LocalDateTime.now();
     }
 
     /**
-     * 매장 위치 정보 업데이트
+     * 매장 위치 업데이트
      */
-    public Store updateLocation(Double latitude, Double longitude) {
-        return Store.builder()
-                .id(this.id)
-                .ownerId(this.ownerId)
-                .storeName(this.storeName)
-                .address(this.address)
-                .latitude(latitude)
-                .longitude(longitude)
-                .category(this.category)
-                .description(this.description)
-                .phone(this.phone)
-                .operatingHours(this.operatingHours)
-                .tags(this.tags)
-                .status(this.status)
-                .rating(this.rating)
-                .reviewCount(this.reviewCount)
-                .imageUrl(this.imageUrl)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+    public void updateLocation(Coordinates coordinates) {
+        this.latitude = coordinates.getLatitude();
+        this.longitude = coordinates.getLongitude();
+        this.updatedAt = LocalDateTime.now();
     }
 
     /**
-     * 매장 평점 및 리뷰 수 업데이트
+     * 매장 평점 업데이트
      */
-    public Store updateRating(Double rating, Integer reviewCount) {
-        return Store.builder()
-                .id(this.id)
-                .ownerId(this.ownerId)
-                .storeName(this.storeName)
-                .address(this.address)
-                .latitude(this.latitude)
-                .longitude(this.longitude)
-                .category(this.category)
-                .description(this.description)
-                .phone(this.phone)
-                .operatingHours(this.operatingHours)
-                .tags(this.tags)
-                .status(this.status)
-                .rating(rating)
-                .reviewCount(reviewCount)
-                .imageUrl(this.imageUrl)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+    public void updateRating(Double rating, Integer reviewCount) {
+        this.rating = rating;
+        this.reviewCount = reviewCount;
+        this.updatedAt = LocalDateTime.now();
     }
 
     /**
      * 매장 활성화
      */
-    public Store activate() {
-        return Store.builder()
-                .id(this.id)
-                .ownerId(this.ownerId)
-                .storeName(this.storeName)
-                .address(this.address)
-                .latitude(this.latitude)
-                .longitude(this.longitude)
-                .category(this.category)
-                .description(this.description)
-                .phone(this.phone)
-                .operatingHours(this.operatingHours)
-                .tags(this.tags)
-                .status(StoreStatus.ACTIVE)
-                .rating(this.rating)
-                .reviewCount(this.reviewCount)
-                .imageUrl(this.imageUrl)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+    public void activate() {
+        this.status = StoreStatus.ACTIVE;
+        this.updatedAt = LocalDateTime.now();
     }
 
     /**
      * 매장 비활성화
      */
-    public Store deactivate() {
-        return Store.builder()
-                .id(this.id)
-                .ownerId(this.ownerId)
-                .storeName(this.storeName)
-                .address(this.address)
-                .latitude(this.latitude)
-                .longitude(this.longitude)
-                .category(this.category)
-                .description(this.description)
-                .phone(this.phone)
-                .operatingHours(this.operatingHours)
-                .tags(this.tags)
-                .status(StoreStatus.INACTIVE)
-                .rating(this.rating)
-                .reviewCount(this.reviewCount)
-                .imageUrl(this.imageUrl)
-                .createdAt(this.createdAt)
-                .updatedAt(LocalDateTime.now())
-                .build();
+    public void deactivate() {
+        this.status = StoreStatus.INACTIVE;
+        this.updatedAt = LocalDateTime.now();
     }
 
     /**
-     * 매장 활성 상태 확인
+     * 매장 삭제 (소프트 삭제)
+     */
+    public void delete() {
+        this.status = StoreStatus.DELETED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 활성 상태 확인
      */
     public boolean isActive() {
-        return StoreStatus.ACTIVE.equals(this.status);
+        return this.status == StoreStatus.ACTIVE;
     }
 
     /**
-     * 매장 소유권 확인
+     * 점주 소유 확인
      */
     public boolean isOwnedBy(Long ownerId) {
-        return this.ownerId != null && this.ownerId.equals(ownerId);
+        return this.ownerId.equals(ownerId);
     }
 
     /**
-     * 두 좌표 간의 거리 계산 (킬로미터)
+     * 거리 계산
      */
     public Double calculateDistance(Double targetLatitude, Double targetLongitude) {
         if (this.latitude == null || this.longitude == null ||
@@ -188,17 +113,18 @@ public class Store {
             return null;
         }
 
-        final int EARTH_RADIUS = 6371; // 지구 반지름 (킬로미터)
+        // Haversine 공식을 사용한 거리 계산
+        double earthRadius = 6371; // 지구 반지름 (km)
 
-        double latDistance = Math.toRadians(targetLatitude - this.latitude);
-        double lonDistance = Math.toRadians(targetLongitude - this.longitude);
+        double dLat = Math.toRadians(targetLatitude - this.latitude);
+        double dLon = Math.toRadians(targetLongitude - this.longitude);
 
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(this.latitude)) * Math.cos(Math.toRadians(targetLatitude))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(this.latitude)) * Math.cos(Math.toRadians(targetLatitude)) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return EARTH_RADIUS * c;
+        return earthRadius * c;
     }
 }

@@ -1,6 +1,6 @@
 package com.ktds.hi.store.infra.gateway;
 
-import com.ktds.hi.store.biz.domain.Menu;
+import com.ktds.hi.store.domain.Menu;
 import com.ktds.hi.store.biz.usecase.out.MenuRepositoryPort;
 import com.ktds.hi.store.infra.gateway.entity.MenuEntity;
 import com.ktds.hi.store.infra.gateway.repository.MenuJpaRepository;
@@ -96,7 +96,7 @@ public class MenuRepositoryAdapter implements MenuRepositoryPort {
                 .price(entity.getPrice())
                 .category(entity.getCategory())
                 .imageUrl(entity.getImageUrl())
-                .isAvailable(entity.getIsAvailable())
+                .available(entity.getIsAvailable())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -114,7 +114,7 @@ public class MenuRepositoryAdapter implements MenuRepositoryPort {
                 .price(domain.getPrice())
                 .category(domain.getCategory())
                 .imageUrl(domain.getImageUrl())
-                .isAvailable(domain.getIsAvailable())
+                .isAvailable(domain.isAvailable())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
                 .build();
