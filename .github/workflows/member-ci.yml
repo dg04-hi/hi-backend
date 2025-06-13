@@ -1,4 +1,4 @@
-name: Analytics CI
+name: Member CI
 
 on:
   push:
@@ -84,7 +84,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./analytics/Dockerfile
+          file: ./member/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |
