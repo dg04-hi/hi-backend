@@ -21,6 +21,8 @@ on:
 env:
   ACR_NAME: acrdigitalgarage03
   IMAGE_NAME: hiorder/recommend
+  MANIFEST_REPO: dg04-hi/hi-manifest
+  MANIFEST_FILE_PATH: recommend/deployment.yml
 
 jobs:
   build-and-push:
@@ -96,6 +98,54 @@ jobs:
           echo "📦 Image: ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}"
           echo "🏷️ Tags: ${{ steps.timestamp.outputs.BUILD_TIME }}, latest"
 
+      # 🚀 Manifest 레포지토리 업데이트 단계 추가
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPO }}
+          token: ${{ secrets.MANIFEST_REPO_TOKEN }}
+          path: manifest-repo
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update deployment image tag
+        run: |
+          cd manifest-repo
+          NEW_IMAGE="${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ steps.timestamp.outputs.BUILD_TIME }}"
+          echo "Updating image tag to: $NEW_IMAGE"
+          
+          # deployment.yml에서 이미지 태그 업데이트
+          yq eval '.spec.template.spec.containers[0].image = "'$NEW_IMAGE'"' -i ${{ env.MANIFEST_FILE_PATH }}
+          
+          # 변경사항 확인
+          echo "Updated deployment.yml:"
+          cat ${{ env.MANIFEST_FILE_PATH }}
+
+      - name: Commit and push changes
+        run: |
+          cd manifest-repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add ${{ env.MANIFEST_FILE_PATH }}
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🚀 Update recommend image tag to ${{ steps.timestamp.outputs.BUILD_TIME }}
+          
+            - Updated by: ${{ github.actor }}
+            - Triggered by: ${{ github.event_name }}
+            - Source commit: ${{ github.sha }}
+            - Build time: ${{ steps.timestamp.outputs.BUILD_TIME }}"
+          
+            git push
+            echo "✅ Successfully updated manifest repository"
+          fi
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -109,3 +159,24 @@ jobs:
         with:
           name: recommend-jar
           path: recommend/build/libs/*.jar
+
+      # 🎯 배포 완료 알림
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "## 🚀 Recommend Service Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Container Image" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: ${{ env.ACR_NAME }}.azurecr.io" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ steps.timestamp.outputs.BUILD_TIME }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔄 ArgoCD Sync" >> $GITHUB_STEP_SUMMARY
+          echo "- **Manifest Repo**: https://github.com/${{ env.MANIFEST_REPO }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Updated File**: ${{ env.MANIFEST_FILE_PATH }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ArgoCD will automatically sync the new image**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⏱️ Build Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered By**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Event**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
