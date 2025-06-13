@@ -120,6 +120,19 @@ public class StoreEntity {
     }
 
     /**
+            * 매장 기본 정보 업데이트
+    */
+    public void updateInfo(String storeName, String address, String description,
+                           String phone, String operatingHours) {
+        this.storeName = storeName;
+        this.address = address;
+        this.description = description;
+        this.phone = phone;
+        this.operatingHours = operatingHours;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
      * 매장 태그 업데이트
      */
     public void updateTags(String tagsJson) {

@@ -1,7 +1,8 @@
-package com.ktds.hi.store.biz.domain;
+package com.ktds.hi.store.domain;
 
 import lombok.Builder;
 import lombok.Getter;
+import java.time.LocalDateTime;
 
 /**
  * 메뉴 도메인 엔티티
@@ -18,6 +19,8 @@ public class Menu {
     private String category;
     private String imageUrl;
     private Boolean available;
+    private LocalDateTime createdAt;    // 추가
+    private LocalDateTime updatedAt;    // 추가
 
     /**
      * 메뉴 정보 업데이트

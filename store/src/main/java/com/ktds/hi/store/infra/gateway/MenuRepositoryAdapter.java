@@ -96,7 +96,7 @@ public class MenuRepositoryAdapter implements MenuRepositoryPort {
                 .price(entity.getPrice())
                 .category(entity.getCategory())
                 .imageUrl(entity.getImageUrl())
-                .isAvailable(entity.getIsAvailable())
+                .available(entity.getIsAvailable())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

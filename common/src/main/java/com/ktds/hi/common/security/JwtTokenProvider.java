@@ -1,5 +1,7 @@
 package com.ktds.hi.common.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import com.ktds.hi.common.exception.BusinessException;
 import com.ktds.hi.common.constants.SecurityConstants;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -54,6 +56,82 @@ public class JwtTokenProvider {
         this.jwtParser = Jwts.parser()
                 .verifyWith(secretKey)
                 .build();
+    }
+    /**
+     * HTTP 요청에서 점주 정보 추출
+     */
+    public Long extractOwnerInfo(HttpServletRequest request) {
+        try {
+            // Authorization 헤더에서 토큰 추출
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new BusinessException("UNAUTHORIZED", "인증 토큰이 필요합니다.");
+            }
+
+            String token = authHeader.substring(7); // "Bearer " 제거
+
+            // 토큰 유효성 검증
+            if (!validateToken(token)) {
+                throw new BusinessException("UNAUTHORIZED", "유효하지 않은 토큰입니다.");
+            }
+
+            // 토큰에서 사용자 ID 추출
+            String userId = getUserIdFromToken(token);
+            if (userId == null) {
+                throw new BusinessException("UNAUTHORIZED", "토큰에서 사용자 정보를 찾을 수 없습니다.");
+            }
+
+            // 토큰에서 권한 정보 추출
+            String roles = getRolesFromToken(token);
+            if (roles == null || !roles.contains("OWNER")) {
+                throw new BusinessException("FORBIDDEN", "점주 권한이 필요합니다.");
+            }
+
+            log.debug("점주 정보 추출 완료: ownerId={}", userId);
+            return Long.parseLong(userId);
+
+        } catch (NumberFormatException e) {
+            log.error("사용자 ID 형변환 실패: {}", e.getMessage());
+            throw new BusinessException("UNAUTHORIZED", "잘못된 사용자 ID 형식입니다.");
+        } catch (BusinessException e) {
+            throw e; // 비즈니스 예외는 그대로 전파
+        } catch (Exception e) {
+            log.error("점주 정보 추출 중 오류 발생: {}", e.getMessage(), e);
+            throw new BusinessException("UNAUTHORIZED", "인증 처리 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * HTTP 요청에서 사용자 정보 추출 (일반 사용자용)
+     */
+    public Long extractUserInfo(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new BusinessException("UNAUTHORIZED", "인증 토큰이 필요합니다.");
+            }
+
+            String token = authHeader.substring(7);
+
+            if (!validateToken(token)) {
+                throw new BusinessException("UNAUTHORIZED", "유효하지 않은 토큰입니다.");
+            }
+
+            String userId = getUserIdFromToken(token);
+            if (userId == null) {
+                throw new BusinessException("UNAUTHORIZED", "토큰에서 사용자 정보를 찾을 수 없습니다.");
+            }
+
+            return Long.parseLong(userId);
+
+        } catch (NumberFormatException e) {
+            throw new BusinessException("UNAUTHORIZED", "잘못된 사용자 ID 형식입니다.");
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("사용자 정보 추출 중 오류 발생: {}", e.getMessage(), e);
+            throw new BusinessException("UNAUTHORIZED", "인증 처리 중 오류가 발생했습니다.");
+        }
     }
 
     /**

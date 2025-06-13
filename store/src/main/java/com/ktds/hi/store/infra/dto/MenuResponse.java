@@ -1,6 +1,6 @@
 package com.ktds.hi.store.infra.dto;
 
-import com.ktds.hi.store.biz.domain.Menu;
+import com.ktds.hi.store.domain.Menu;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
