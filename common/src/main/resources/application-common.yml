@@ -51,13 +51,12 @@ app:
     secret-key: ${JWT_SECRET_KEY:hiorder-secret-key-for-jwt-token-generation-2024-very-long-secret-key}
     access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:3600000}  # 1시간
     refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:604800000}  # 7일
-
   # CORS 설정
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://20.214.126.84:80,http://localhost:8080}
     allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
     allowed-headers: ${CORS_ALLOWED_HEADERS:*}
-    exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization}
+    exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization, X-Total-Count}
     allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
     max-age: ${CORS_MAX_AGE:3600}
 
