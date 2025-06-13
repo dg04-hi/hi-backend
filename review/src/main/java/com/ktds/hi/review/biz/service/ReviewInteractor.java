@@ -65,9 +65,8 @@ public class ReviewInteractor implements CreateReviewUseCase, DeleteReviewUseCas
     public ReviewDeleteResponse deleteReview(Long reviewId, Long memberId) {
         Review review = reviewRepository.findReviewByIdAndMemberId(reviewId, memberId)
                 .orElseThrow(() -> new BusinessException("리뷰를 찾을 수 없거나 권한이 없습니다"));
-        
-        Review deletedReview = review.updateStatus(ReviewStatus.DELETED);
-        reviewRepository.saveReview(deletedReview);
+
+        reviewRepository.deleteReview(reviewId);
         
         log.info("리뷰 삭제 완료: reviewId={}, memberId={}", reviewId, memberId);
         
