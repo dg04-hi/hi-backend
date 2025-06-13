@@ -1,5 +1,7 @@
 package com.ktds.hi.review.infra.config;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -13,7 +15,8 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class SwaggerConfig {
-    
+
+    private static final String SECURITY_SCHEME_NAME = "bearerAuth";
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
@@ -21,7 +24,10 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("하이오더 리뷰 관리 서비스 API")
                         .description("리뷰 작성, 조회, 삭제, 반응, 댓글 등 리뷰 관련 기능을 제공하는 API")
-                        .version("1.0.0"));
+                        .version("1.0.0"))
+                .components(new Components()                                    // 이 줄 추가!
+                    .addSecuritySchemes(SECURITY_SCHEME_NAME, createAPIKeyScheme())) // 이 줄 추가!
+                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME)); // 이 줄 추가!
     }
 
     /**
