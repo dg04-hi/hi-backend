@@ -43,9 +43,7 @@ spring:
         order_inserts: true
         order_updates: true
     open-in-view: false
-
-
-
+  
   # Redis 설정 (올바른 구조)
   data:
     redis:
@@ -133,9 +131,9 @@ management:
 # Swagger/OpenAPI 설정
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /docs/recommend/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /docs/recommend/swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
     display-request-duration: true

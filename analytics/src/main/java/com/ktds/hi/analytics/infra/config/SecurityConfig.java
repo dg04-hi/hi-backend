@@ -31,9 +31,9 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				// Swagger 관련 경로 모두 허용
-				.requestMatchers("/swagger-ui.html","/swagger-ui/**", "/swagger-ui.html").permitAll()
-				.requestMatchers("/api-docs/**", "/v3/api-docs/**").permitAll()
-				.requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
+				.requestMatchers("/docs/analytics/swagger-ui.html","/docs/analytics/swagger-ui/**").permitAll()
+				.requestMatchers("/docs/analytics/api-docs/**").permitAll()
+				.requestMatchers("/docs/analytics/swagger-resources/**", "/webjars/**").permitAll()
 
 				// Analytics API 모두 허용 (테스트용)
 				.requestMatchers("/api/analytics/**").permitAll()

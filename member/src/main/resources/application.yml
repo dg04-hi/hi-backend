@@ -46,8 +46,10 @@ sms:
 springdoc:
   swagger-ui:
     enabled: true
-    path: /swagger-ui.html
+    path: /docs/member/swagger-ui.html
     try-it-out-enabled: true
+  api-docs:
+    path: /docs/member/api-docs
 
 management:
   endpoints:

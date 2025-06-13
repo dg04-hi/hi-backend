@@ -43,6 +43,6 @@ external-api:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /docs/store/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /docs/store/swagger-ui.html

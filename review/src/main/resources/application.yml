@@ -37,6 +37,7 @@ file-storage:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /docs/review/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    enabled: true
+    path: /docs/review/swagger-ui.html

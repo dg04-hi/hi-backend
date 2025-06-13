@@ -64,8 +64,10 @@ external:
 springdoc:
   swagger-ui:
     enabled: true
-    path: /swagger-ui.html
+    path: /docs/analytics/swagger-ui.html
     try-it-out-enabled: true
+  api-docs:
+    path: /docs/analytics/api-docs
 
 management:
   endpoints:
