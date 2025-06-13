@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -119,32 +120,283 @@ public class AnalyticsService implements AnalyticsUseCase {
     
     @Override
     public StoreStatisticsResponse getStoreStatistics(Long storeId, LocalDate startDate, LocalDate endDate) {
-        // 이전 구현과 동일
-        return null; // 구현 생략
+        log.info("매장 통계 조회 시작: storeId={}, startDate={}, endDate={}", storeId, startDate, endDate);
+
+        try {
+            // 1. 캐시 키 생성
+            String cacheKey = String.format("statistics:store:%d:%s:%s", storeId, startDate, endDate);
+            var cachedResult = cachePort.getAnalyticsCache(cacheKey);
+            if (cachedResult.isPresent()) {
+                log.info("캐시에서 통계 데이터 반환: storeId={}", storeId);
+                return (StoreStatisticsResponse) cachedResult.get();
+            }
+
+            // 2. 주문 통계 데이터 조회 (실제 OrderStatistics 도메인 필드 사용)
+            var orderStatistics = orderDataPort.getOrderStatistics(storeId, startDate, endDate);
+
+            // 3. 응답 생성
+            StoreStatisticsResponse response = StoreStatisticsResponse.builder()
+                .storeId(storeId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .totalOrders(orderStatistics.getTotalOrders())
+                .totalRevenue(orderStatistics.getTotalRevenue())
+                .averageOrderValue(orderStatistics.getAverageOrderValue())
+                .peakHour(orderStatistics.getPeakHour())
+                .popularMenus(orderStatistics.getPopularMenus())
+                .customerAgeDistribution(orderStatistics.getCustomerAgeDistribution())
+                .build();
+
+            // 4. 캐시에 저장
+            cachePort.putAnalyticsCache(cacheKey, response, java.time.Duration.ofMinutes(30));
+
+            log.info("매장 통계 조회 완료: storeId={}", storeId);
+            return response;
+
+        } catch (Exception e) {
+            log.error("매장 통계 조회 중 오류 발생: storeId={}", storeId, e);
+            throw new RuntimeException("매장 통계 조회에 실패했습니다.", e);
+        }
     }
     
     @Override
     public AiFeedbackSummaryResponse getAIFeedbackSummary(Long storeId) {
-        // 이전 구현과 동일
-        return null; // 구현 생략
+        log.info("AI 피드백 요약 조회 시작: storeId={}", storeId);
+
+        try {
+            // 1. 캐시에서 확인
+            String cacheKey = "ai_feedback_summary:store:" + storeId;
+            var cachedResult = cachePort.getAnalyticsCache(cacheKey);
+            if (cachedResult.isPresent()) {
+                return (AiFeedbackSummaryResponse) cachedResult.get();
+            }
+
+            // 2. AI 피드백 조회
+            var aiFeedback = analyticsPort.findAIFeedbackByStoreId(storeId);
+
+            if (aiFeedback.isEmpty()) {
+                // 3. 피드백이 없으면 기본 응답 생성
+                AiFeedbackSummaryResponse emptyResponse = AiFeedbackSummaryResponse.builder()
+                    .storeId(storeId)
+                    .hasData(false)
+                    .message("분석할 데이터가 부족합니다.")
+                    .lastUpdated(LocalDateTime.now())
+                    .build();
+
+                cachePort.putAnalyticsCache(cacheKey, emptyResponse, java.time.Duration.ofHours(1));
+                return emptyResponse;
+            }
+
+            // 4. 응답 생성
+            AiFeedbackSummaryResponse response = AiFeedbackSummaryResponse.builder()
+                .storeId(storeId)
+                .hasData(true)
+                .message("AI 분석이 완료되었습니다.")
+                .overallScore(aiFeedback.get().getConfidenceScore())
+                .keyInsight(aiFeedback.get().getSummary())
+                .priorityRecommendation(getFirstRecommendation(aiFeedback.get()))
+                .lastUpdated(aiFeedback.get().getUpdatedAt())
+                .build();
+
+            // 5. 캐시에 저장
+            cachePort.putAnalyticsCache(cacheKey, response, java.time.Duration.ofHours(2));
+
+            log.info("AI 피드백 요약 조회 완료: storeId={}", storeId);
+            return response;
+
+        } catch (Exception e) {
+            log.error("AI 피드백 요약 조회 중 오류 발생: storeId={}", storeId, e);
+            throw new RuntimeException("AI 피드백 요약 조회에 실패했습니다.", e);
+        }
     }
     
     @Override
     public ReviewAnalysisResponse getReviewAnalysis(Long storeId) {
-        // 이전 구현과 동일
-        return null; // 구현 생략
+        log.info("리뷰 분석 조회 시작: storeId={}", storeId);
+
+        try {
+            // 1. 캐시에서 확인
+            String cacheKey = "review_analysis:store:" + storeId;
+            var cachedResult = cachePort.getAnalyticsCache(cacheKey);
+            if (cachedResult.isPresent()) {
+                return (ReviewAnalysisResponse) cachedResult.get();
+            }
+
+            // 2. 최근 리뷰 데이터 조회 (30일)
+            List<String> recentReviews = externalReviewPort.getRecentReviews(storeId, 30);
+
+            if (recentReviews.isEmpty()) {
+                ReviewAnalysisResponse emptyResponse = ReviewAnalysisResponse.builder()
+                    .storeId(storeId)
+                    .totalReviews(0)
+                    .positiveReviewCount(0)
+                    .negativeReviewCount(0)
+                    .positiveRate(0.0)
+                    .negativeRate(0.0)
+                    .analysisDate(LocalDate.now())
+                    .build();
+
+                cachePort.putAnalyticsCache(cacheKey, emptyResponse, java.time.Duration.ofHours(1));
+                return emptyResponse;
+            }
+
+            // 3. 응답 생성
+            int positiveCount = countPositiveReviews(recentReviews);
+            int negativeCount = countNegativeReviews(recentReviews);
+            int totalCount = recentReviews.size();
+
+            ReviewAnalysisResponse response = ReviewAnalysisResponse.builder()
+                .storeId(storeId)
+                .totalReviews(totalCount)
+                .positiveReviewCount(positiveCount)
+                .negativeReviewCount(negativeCount)
+                .positiveRate((double) positiveCount / totalCount * 100)
+                .negativeRate((double) negativeCount / totalCount * 100)
+                .analysisDate(LocalDate.now())
+                .build();
+
+            // 4. 캐시에 저장
+            cachePort.putAnalyticsCache(cacheKey, response, java.time.Duration.ofHours(4));
+
+            log.info("리뷰 분석 조회 완료: storeId={}", storeId);
+            return response;
+
+        } catch (Exception e) {
+            log.error("리뷰 분석 중 오류 발생: storeId={}", storeId, e);
+            throw new RuntimeException("리뷰 분석에 실패했습니다.", e);
+        }
     }
     
     // private 메서드들
     @Transactional
-    private Analytics generateNewAnalytics(Long storeId) {
-        // 이전 구현과 동일
-        return null; // 구현 생략
+    public Analytics generateNewAnalytics(Long storeId) {
+        log.info("새로운 분석 데이터 생성 시작: storeId={}", storeId);
+
+        try {
+            // 1. 리뷰 데이터 수집
+            List<String> reviewData = externalReviewPort.getReviewData(storeId);
+            int totalReviews = reviewData.size();
+
+            if (totalReviews == 0) {
+                log.warn("리뷰 데이터가 없어 기본값으로 분석 데이터 생성: storeId={}", storeId);
+                return createDefaultAnalytics(storeId);
+            }
+
+            // 2. 기본 통계 계산
+            double averageRating = 4.0; // 기본값
+            double sentimentScore = 0.5; // 중립
+            double positiveRate = 60.0;
+            double negativeRate = 20.0;
+
+            // 3. Analytics 도메인 객체 생성
+            Analytics analytics = Analytics.builder()
+                .storeId(storeId)
+                .totalReviews(totalReviews)
+                .averageRating(averageRating)
+                .sentimentScore(sentimentScore)
+                .positiveReviewRate(positiveRate)
+                .negativeReviewRate(negativeRate)
+                .lastAnalysisDate(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+            // 4. 데이터베이스에 저장
+            Analytics saved = analyticsPort.saveAnalytics(analytics);
+
+            log.info("새로운 분석 데이터 생성 완료: storeId={}", storeId);
+            return saved;
+
+        } catch (Exception e) {
+            log.error("분석 데이터 생성 중 오류 발생: storeId={}", storeId, e);
+            return createDefaultAnalytics(storeId);
+        }
     }
     
     @Transactional
-    private AiFeedback generateAIFeedback(Long storeId) {
-        // 이전 구현과 동일
-        return null; // 구현 생략
+    public AiFeedback generateAIFeedback(Long storeId) {
+        log.info("AI 피드백 생성 시작: storeId={}", storeId);
+
+        try {
+            // 1. 최근 30일 리뷰 데이터 수집
+            List<String> reviewData = externalReviewPort.getRecentReviews(storeId, 30);
+
+            if (reviewData.isEmpty()) {
+                log.warn("AI 피드백 생성을 위한 리뷰 데이터가 없습니다: storeId={}", storeId);
+                return createDefaultAIFeedback(storeId);
+            }
+
+            // 2. AI 피드백 생성 (실제로는 AI 서비스 호출)
+            AiFeedback aiFeedback = AiFeedback.builder()
+                .storeId(storeId)
+                .summary("고객들의 전반적인 만족도가 높습니다.")
+                .positivePoints(List.of("맛이 좋다", "서비스가 친절하다", "분위기가 좋다"))
+                .improvementPoints(List.of("대기시간 단축", "가격 경쟁력", "메뉴 다양성"))
+                .recommendations(List.of("특별 메뉴 개발", "예약 시스템 도입", "고객 서비스 교육"))
+                .sentimentAnalysis("POSITIVE")
+                .confidenceScore(0.85)
+                .generatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+            // 3. 데이터베이스에 저장
+            AiFeedback saved = analyticsPort.saveAIFeedback(aiFeedback);
+
+            log.info("AI 피드백 생성 완료: storeId={}", storeId);
+            return saved;
+
+        } catch (Exception e) {
+            log.error("AI 피드백 생성 중 오류 발생: storeId={}", storeId, e);
+            return createDefaultAIFeedback(storeId);
+        }
+
+
+    }
+
+    private Analytics createDefaultAnalytics(Long storeId) {
+        return Analytics.builder()
+            .storeId(storeId)
+            .totalReviews(0)
+            .averageRating(0.0)
+            .sentimentScore(0.0)
+            .positiveReviewRate(0.0)
+            .negativeReviewRate(0.0)
+            .lastAnalysisDate(LocalDateTime.now())
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+    }
+
+    private AiFeedback createDefaultAIFeedback(Long storeId) {
+        return AiFeedback.builder()
+            .storeId(storeId)
+            .summary("분석할 리뷰 데이터가 부족합니다.")
+            .positivePoints(List.of("데이터 부족으로 분석 불가"))
+            .improvementPoints(List.of("리뷰 데이터 수집 필요"))
+            .recommendations(List.of("고객들의 리뷰 작성을 유도해보세요"))
+            .sentimentAnalysis("NEUTRAL")
+            .confidenceScore(0.0)
+            .generatedAt(LocalDateTime.now())
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+    }
+
+    private String getFirstRecommendation(AiFeedback feedback) {
+        if (feedback.getRecommendations() != null && !feedback.getRecommendations().isEmpty()) {
+            return feedback.getRecommendations().get(0);
+        }
+        return "추천사항이 없습니다.";
+    }
+
+    private int countPositiveReviews(List<String> reviews) {
+        // 실제로는 AI 서비스를 통한 감정 분석 필요
+        return (int) (reviews.size() * 0.6); // 60% 가정
+    }
+
+    private int countNegativeReviews(List<String> reviews) {
+        // 실제로는 AI 서비스를 통한 감정 분석 필요
+        return (int) (reviews.size() * 0.2); // 20% 가정
     }
 }

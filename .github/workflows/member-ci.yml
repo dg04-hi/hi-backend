@@ -23,6 +23,7 @@ env:
   MANIFEST_REPO: dg04-hi/hi-manifest
   MANIFEST_FILE_PATH: member/deployment.yml
 
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
