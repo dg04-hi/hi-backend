@@ -10,15 +10,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * JPA Auditing 및 Repository 스캔 설정
  */
 @Configuration
-@EnableJpaRepositories(basePackages = {
- //       "com.ktds.hi.store.infra.gateway.entity",
-        "com.ktds.hi.common.repository"
-})
-@EntityScan(basePackages = {
-        "com.ktds.hi.store.infra.gateway.entity",
-        "com.ktds.hi.common.entity",
-        "com.ktds.hi.common.audit"
-})
+// @EntityScan(basePackages = {
+//         // "com.ktds.hi.store.infra.gateway.entity",
+//         // "com.ktds.hi.common.entity",
+//         // "com.ktds.hi.common.audit"
+// })
 @EnableJpaAuditing(auditorAwareRef = "customAuditorAware")
 public class JpaConfig {
 }
