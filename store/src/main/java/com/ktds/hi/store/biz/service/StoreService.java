@@ -50,6 +50,7 @@ public class StoreService implements StoreUseCase {
                 .phone(request.getPhone())
                 .operatingHours(request.getOperatingHours())
                 .category(request.getCategory())
+                .tagsJson(String.join(",", request.getTags()))
                 .status("ACTIVE")
                 .rating(0.0)
                 .reviewCount(0)
@@ -60,6 +61,8 @@ public class StoreService implements StoreUseCase {
         StoreEntity savedStore = storeJpaRepository.save(store);
 
         log.info("매장 등록 완료: storeId={}", savedStore.getId());
+
+
 
         return StoreCreateResponse.builder()
                 .storeId(savedStore.getId())
