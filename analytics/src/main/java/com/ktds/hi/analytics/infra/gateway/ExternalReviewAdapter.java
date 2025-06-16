@@ -1,14 +1,27 @@
 package com.ktds.hi.analytics.infra.gateway;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.ktds.hi.analytics.biz.usecase.out.ExternalReviewPort;
+
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 외부 리뷰 서비스 어댑터 클래스
@@ -30,11 +43,20 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
         
         try {
             String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "/content";
-            String[] reviewArray = restTemplate.getForObject(url, String[].class);
-            
-            List<String> reviews = reviewArray != null ? Arrays.asList(reviewArray) : List.of();
+            // ReviewListResponse 배열로 직접 받기 (Review 서비스가 List<ReviewListResponse> 반환)
+            ReviewListResponse[] reviewArray = restTemplate.getForObject(url, ReviewListResponse[].class);
+
+            if (reviewArray == null || reviewArray.length == 0) {
+                log.info("매장에 리뷰가 없습니다: storeId={}", storeId);
+                return List.of();
+            }
+
+            // ReviewListResponse에서 content만 추출
+            List<String> reviews = Arrays.stream(reviewArray)
+                .map(ReviewListResponse::getContent)
+                .filter(content -> content != null && !content.trim().isEmpty())
+                .collect(Collectors.toList());
             log.info("리뷰 데이터 조회 완료: storeId={}, count={}", storeId, reviews.size());
-            
             return reviews;
             
         } catch (Exception e) {
@@ -49,13 +71,30 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
         log.info("최근 리뷰 데이터 조회: storeId={}, days={}", storeId, days);
         
         try {
-            String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "/recent?days=" + days;
-            String[] reviewArray = restTemplate.getForObject(url, String[].class);
+            // String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "/recent?days=" + days;
+            String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "?size=100";
+            // ReviewListResponse 배열로 직접 받기
+            ReviewListResponse[] reviewArray = restTemplate.getForObject(url, ReviewListResponse[].class);
+
+            if (reviewArray == null || reviewArray.length == 0) {
+                log.info("매장에 최근 리뷰가 없습니다: storeId={}", storeId);
+                return List.of();
+            }
+
+            // 최근 N일 이내의 리뷰만 필터링
+            LocalDateTime cutoffDate = LocalDateTime.now().minusDays(days);
+
+            List<String> recentReviews = Arrays.stream(reviewArray)
+                .filter(review -> review.getCreatedAt() != null && review.getCreatedAt().isAfter(cutoffDate))
+                .map(ReviewListResponse::getContent)
+                .filter(content -> content != null && !content.trim().isEmpty())
+                .collect(Collectors.toList());
+
+
+
+            log.info("최근 리뷰 데이터 조회 완료: storeId={}, count={}", storeId, recentReviews.size());
             
-            List<String> reviews = reviewArray != null ? Arrays.asList(reviewArray) : List.of();
-            log.info("최근 리뷰 데이터 조회 완료: storeId={}, count={}", storeId, reviews.size());
-            
-            return reviews;
+            return recentReviews;
             
         } catch (Exception e) {
             log.error("최근 리뷰 데이터 조회 실패: storeId={}", storeId, e);
@@ -124,5 +163,75 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
                 "포장이 깔끔하게 되어있었습니다.",
                 "다음에도 주문할게요!"
         );
+    }
+
+
+    @Data
+    public static class ReviewListResponse {
+
+        @JsonProperty("reviewId")
+        private Long reviewId;
+
+        @JsonProperty("memberNickname")
+        private String memberNickname;
+
+        @JsonProperty("rating")
+        private Integer rating;
+
+        @JsonProperty("content")
+        private String content;
+
+        @JsonProperty("imageUrls")
+        private List<String> imageUrls;
+
+        @JsonProperty("likeCount")
+        private Integer likeCount;
+
+        @JsonProperty("dislikeCount")
+        private Integer dislikeCount;
+
+        @JsonProperty("createdAt")
+        @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
+        private LocalDateTime createdAt;
+    }
+
+
+    /**
+     * 다양한 LocalDateTime 형식을 처리하는 커스텀 Deserializer
+     */
+    public static class FlexibleLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
+
+        private static final DateTimeFormatter[] FORMATTERS = {
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),     // 마이크로초 6자리
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSS"),      // 마이크로초 5자리
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSS"),       // 마이크로초 4자리
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),        // 밀리초 3자리
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS"),         // 2자리
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.S"),          // 1자리
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),            // 초까지만
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME                            // ISO 표준
+        };
+
+        @Override
+        public LocalDateTime deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            String dateString = parser.getText();
+
+            if (dateString == null || dateString.trim().isEmpty()) {
+                return null;
+            }
+
+            // 여러 형식으로 시도
+            for (DateTimeFormatter formatter : FORMATTERS) {
+                try {
+                    return LocalDateTime.parse(dateString, formatter);
+                } catch (DateTimeParseException e) {
+                    // 다음 형식으로 시도
+                }
+            }
+
+            // 모든 형식이 실패하면 현재 시간 반환 (에러 로그)
+            System.err.println("Failed to parse LocalDateTime: " + dateString + ", using current time");
+            return LocalDateTime.now();
+        }
     }
 }

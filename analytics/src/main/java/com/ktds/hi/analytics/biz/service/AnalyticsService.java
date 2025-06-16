@@ -475,6 +475,8 @@ public class AnalyticsService implements AnalyticsUseCase {
             // 1. 리뷰 데이터 수집
             List<String> reviewData = externalReviewPort.getRecentReviews(storeId, days);
 
+            log.info("review Data check ===> {}", reviewData);
+
             if (reviewData.isEmpty()) {
                 log.warn("AI 피드백 생성을 위한 리뷰 데이터가 없습니다: storeId={}", storeId);
                 return createDefaultAIFeedback(storeId);
