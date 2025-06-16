@@ -1,6 +1,8 @@
 // common/src/main/java/com/ktds/hi/common/exception/BusinessException.java
 package com.ktds.hi.common.exception;
 
+import com.ktds.hi.common.dto.ResponseCode;
+
 /**
  * 비즈니스 로직 예외의 기본 클래스
  * 모든 커스텀 예외의 부모 클래스
@@ -9,6 +11,22 @@ public class BusinessException extends RuntimeException {
 
     private String errorCode;
     private Object[] args;
+
+    /**
+     * ResponseCode와 메시지로 예외 생성
+     */
+    public BusinessException(ResponseCode responseCode, String message) {
+        super(message);
+        this.errorCode = responseCode.getCode();
+    }
+
+    /**
+     * ResponseCode로 예외 생성 (기본 메시지 사용)
+     */
+    public BusinessException(ResponseCode responseCode) {
+        super(responseCode.getMessage());
+        this.errorCode = responseCode.getCode();
+    }
 
     /**
      * 메시지만으로 예외 생성

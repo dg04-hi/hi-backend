@@ -3,6 +3,9 @@ package com.ktds.hi.common.security;
 import jakarta.servlet.http.HttpServletRequest;
 import com.ktds.hi.common.exception.BusinessException;
 import com.ktds.hi.common.constants.SecurityConstants;
+import jakarta.servlet.http.HttpServletRequest;
+import com.ktds.hi.common.exception.BusinessException;
+import com.ktds.hi.common.dto.ResponseCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -132,6 +135,52 @@ public class JwtTokenProvider {
             log.error("사용자 정보 추출 중 오류 발생: {}", e.getMessage(), e);
             throw new BusinessException("UNAUTHORIZED", "인증 처리 중 오류가 발생했습니다.");
         }
+    }
+
+    /**
+     * HttpServletRequest에서 점주 ID 추출
+     *
+     * @param request HTTP 요청 객체
+     * @return 점주 ID
+     */
+    public Long extractOwnerIdFromRequest(HttpServletRequest request) {
+        try {
+            String token = getJwtFromRequest(request);
+            if (token == null) {
+                throw new BusinessException(ResponseCode.UNAUTHORIZED, "토큰이 필요합니다.");
+            }
+
+            if (!validateToken(token)) {
+                throw new BusinessException(ResponseCode.INVALID_TOKEN, "유효하지 않은 토큰입니다.");
+            }
+
+            String userId = getUserIdFromToken(token);
+            if (userId == null || userId.trim().isEmpty()) {
+                throw new BusinessException(ResponseCode.INVALID_TOKEN, "토큰에서 사용자 정보를 찾을 수 없습니다.");
+            }
+
+            return Long.parseLong(userId);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ResponseCode.INVALID_TOKEN, "유효하지 않은 사용자 ID 형식입니다.");
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("토큰에서 점주 ID 추출 실패", e);
+            throw new BusinessException(ResponseCode.UNAUTHORIZED, "인증에 실패했습니다.");
+        }
+    }
+
+    /**
+     * 요청에서 JWT 토큰 추출
+     */
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+
+        return null;
     }
 
     /**

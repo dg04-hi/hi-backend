@@ -6,6 +6,7 @@ import com.ktds.hi.common.dto.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 분석 서비스 컨트롤러 클래스
@@ -112,5 +114,45 @@ public class AnalyticsController {
         ReviewAnalysisResponse response = analyticsUseCase.getReviewAnalysis(storeId);
         
         return ResponseEntity.ok(SuccessResponse.of(response, "리뷰 분석 조회 성공"));
+    }
+
+
+    /**
+     * AI 리뷰 분석 및 실행계획 생성
+     */
+    @Operation(summary = "AI 리뷰 분석", description = "매장 리뷰를 AI로 분석하고 실행계획을 생성합니다.")
+    @PostMapping("/stores/{storeId}/ai-analysis")
+    public ResponseEntity<SuccessResponse<AiAnalysisResponse>> generateAIAnalysis(
+        @Parameter(description = "매장 ID", required = true)
+        @PathVariable @NotNull Long storeId,
+
+        @Parameter(description = "분석 요청 정보")
+        @RequestBody(required = false) @Valid AiAnalysisRequest request) {
+
+        log.info("AI 리뷰 분석 요청: storeId={}", storeId);
+
+        if (request == null) {
+            request = AiAnalysisRequest.builder().build();
+        }
+
+        AiAnalysisResponse response = analyticsUseCase.generateAIAnalysis(storeId, request);
+
+        return ResponseEntity.ok(SuccessResponse.of(response, "AI 분석 완료"));
+    }
+
+    /**
+     * AI 피드백 기반 실행계획 생성
+     */
+    @Operation(summary = "실행계획 생성", description = "AI 피드백을 기반으로 실행계획을 생성합니다.")
+    @PostMapping("/ai-feedback/{feedbackId}/action-plans")
+    public ResponseEntity<SuccessResponse<List<String>>> generateActionPlans(
+        @Parameter(description = "AI 피드백 ID", required = true)
+        @PathVariable @NotNull Long feedbackId) {
+
+        log.info("실행계획 생성 요청: feedbackId={}", feedbackId);
+
+        List<String> actionPlans = analyticsUseCase.generateActionPlansFromFeedback(feedbackId);
+
+        return ResponseEntity.ok(SuccessResponse.of(actionPlans, "실행계획 생성 완료"));
     }
 }

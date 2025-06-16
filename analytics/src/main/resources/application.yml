@@ -52,9 +52,9 @@ ai-api:
 # 외부 서비스 설정
 external:
   services:
-    review: ${EXTERNAL_SERVICES_REVIEW:http://localhost:8082}
-    store: ${EXTERNAL_SERVICES_STORE:http://localhost:8081}
-    member: ${EXTERNAL_SERVICES_MEMBER:http://localhost:8080}
+    review: ${EXTERNAL_SERVICES_REVIEW:http://localhost:8083}
+    store: ${EXTERNAL_SERVICES_STORE:http://localhost:8082}
+    member: ${EXTERNAL_SERVICES_MEMBER:http://localhost:8081}
 
 #springdoc:
 #  api-docs:
@@ -83,6 +83,9 @@ ai:
       key: ${AI_AZURE_COGNITIVE_KEY:your-cognitive-service-key}
   openai:
     api-key: ${AI_OPENAI_API_KEY:your-openai-api-key}
+  claude:
+    api-key: ${AI_CLAUDE_KEY:your-claude-key}
+    endpoint: ${AI_CLAUDE_ENDPOINT:https://api.anthropic.com}
 
 # Azure Event Hub 설정
 azure:

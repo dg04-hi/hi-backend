@@ -3,6 +3,7 @@ package com.ktds.hi.analytics.biz.usecase.in;
 import com.ktds.hi.analytics.infra.dto.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 분석 서비스 UseCase 인터페이스
@@ -34,4 +35,15 @@ public interface AnalyticsUseCase {
      * 리뷰 분석 조회
      */
     ReviewAnalysisResponse getReviewAnalysis(Long storeId);
+
+    /**
+     * AI 리뷰 분석 및 실행계획 생성
+     */
+    AiAnalysisResponse generateAIAnalysis(Long storeId, AiAnalysisRequest request);
+
+    /**
+     * AI 피드백 기반 실행계획 생성
+     */
+    List<String> generateActionPlansFromFeedback(Long feedbackId);
+
 }

@@ -1,10 +1,12 @@
 // store/src/main/java/com/ktds/hi/store/infra/controller/StoreController.java
 package com.ktds.hi.store.infra.controller;
 
+import com.ktds.hi.store.biz.usecase.in.MenuUseCase;
 import com.ktds.hi.store.biz.usecase.in.StoreUseCase;
 import com.ktds.hi.store.infra.dto.*;
 import com.ktds.hi.common.dto.ApiResponse;
 import com.ktds.hi.common.security.JwtTokenProvider;
+import com.ktds.hi.store.infra.dto.response.StoreMenuListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +39,8 @@ public class StoreController {
 
     private final StoreUseCase storeUseCase;
     private final JwtTokenProvider jwtTokenProvider;
+    private final MenuUseCase menuUseCase;
+
 
     @Operation(summary = "매장 등록", description = "새로운 매장을 등록합니다.")
     @PostMapping
@@ -116,5 +120,27 @@ public class StoreController {
                 keyword, category, tags, latitude, longitude, radius, page, size);
 
         return ResponseEntity.ok(ApiResponse.success(responses, "매장 검색 완료"));
+    }
+
+    @GetMapping("/{storeId}/menus")
+    @Operation(summary = "매장 메뉴 목록 조회 (매장 상세에서)", description = "매장 상세 정보 조회 시 메뉴 목록을 함께 제공")
+    public ResponseEntity<ApiResponse<List<StoreMenuListResponse>>> getStoreMenusFromStore(
+            @Parameter(description = "매장 ID") @PathVariable Long storeId) {
+
+        List<StoreMenuListResponse> response = menuUseCase.getStoreMenus(storeId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+
+
+    @GetMapping("/{storeId}/menus/popular")
+    @Operation(summary = "매장 인기 메뉴 조회", description = "매장의 인기 메뉴(주문 횟수 기준)를 조회합니다.")
+    public ResponseEntity<ApiResponse<List<StoreMenuListResponse>>> getPopularMenus(
+            @Parameter(description = "매장 ID") @PathVariable Long storeId,
+            @Parameter(description = "조회할 메뉴 개수") @RequestParam(defaultValue = "5") int limit) {
+
+        List<StoreMenuListResponse> response = menuUseCase.getStoreMenus(storeId);
+        // 인기 메뉴 조회 로직 추가 필요
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
