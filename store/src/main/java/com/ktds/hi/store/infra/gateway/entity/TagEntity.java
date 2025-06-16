@@ -3,6 +3,11 @@ package com.ktds.hi.store.infra.gateway.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import com.ktds.hi.store.domain.TagCategory;
+import com.ktds.hi.store.infra.gateway.entity.StoreEntity;
+
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 태그 엔티티 클래스
  * 매장 태그 정보를 저장
@@ -21,6 +26,9 @@ public class TagEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToMany(mappedBy = "tags")
+    private Set<StoreEntity> stores = new HashSet<>();
 
     @Column(name = "tag_name", nullable = false, length = 50)
     private String tagName; // 매운맛, 깨끗한, 유제품 등

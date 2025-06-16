@@ -2,6 +2,7 @@ package com.ktds.hi.store.infra.gateway.repository;
 
 import com.ktds.hi.store.domain.TagCategory;
 import com.ktds.hi.store.infra.gateway.entity.TagEntity;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -25,6 +26,16 @@ public interface TagJpaRepository extends JpaRepository<TagEntity, Long> {
      */
     List<TagEntity> findByIsActiveTrueOrderByTagName();
 
+    @Query("SELECT t FROM TagEntity t JOIN t.stores s WHERE s.id = :storeId AND t.isActive = true")
+    List<TagEntity> findByStoreId(@Param("storeId") Long storeId);
+
+    @Query("SELECT t FROM TagEntity t JOIN t.stores s WHERE s.id IN :storeIds AND t.isActive = true")
+    List<TagEntity> findByStoreIds(@Param("storeIds") List<Long> storeIds);
+
+    @Query("SELECT t.tagName, COUNT(s) as storeCount FROM TagEntity t " +
+            "JOIN t.stores s WHERE t.isActive = true " +
+            "GROUP BY t.tagName ORDER BY storeCount DESC")
+    List<Object[]> findTopTagsByStoreCount(@Param("limit") int limit);
     /**
      * 태그명으로 조회
      */

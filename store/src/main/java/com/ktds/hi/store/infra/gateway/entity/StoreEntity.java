@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
+import java.util.HashSet;
+import java.util.Set;
 import java.time.LocalDateTime;
 
 /**
@@ -75,6 +76,14 @@ public class StoreEntity {
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    @ManyToMany
+    @JoinTable(
+            name = "store_tags",
+            joinColumns = @JoinColumn(name = "store_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<TagEntity> tags = new HashSet<>();
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

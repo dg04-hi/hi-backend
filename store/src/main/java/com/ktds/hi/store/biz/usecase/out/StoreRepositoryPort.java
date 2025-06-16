@@ -1,6 +1,7 @@
 package com.ktds.hi.store.biz.usecase.out;
 
 import com.ktds.hi.store.domain.Store;
+import com.ktds.hi.store.infra.gateway.entity.TagEntity;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,15 @@ import java.util.Optional;
  */
 public interface StoreRepositoryPort {
 
+    /**
+     * 매장의 태그 목록 조회
+     */
+    List<TagEntity> findTagsByStoreId(Long storeId);
+
+    /**
+     * 여러 매장의 태그 목록 조회
+     */
+    List<TagEntity> findTagsByStoreIds(List<Long> storeIds);
     /**
      * 태그로 매장 검색 (OR 조건)
      */

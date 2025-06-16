@@ -5,12 +5,15 @@ import com.ktds.hi.store.domain.StoreStatus;
 import com.ktds.hi.store.biz.usecase.out.StoreRepositoryPort;
 import com.ktds.hi.store.biz.usecase.out.StoreSearchCriteria;
 import com.ktds.hi.store.infra.gateway.entity.StoreEntity;
+import com.ktds.hi.store.infra.gateway.entity.TagEntity;
 import com.ktds.hi.store.infra.gateway.repository.StoreJpaRepository;
+import com.ktds.hi.store.infra.gateway.repository.TagJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+import com.ktds.hi.store.infra.gateway.entity.TagEntity;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +32,36 @@ import java.util.stream.Collectors;
 public class StoreRepositoryAdapter implements StoreRepositoryPort {
 
     private final StoreJpaRepository storeJpaRepository;
+    private final TagJpaRepository tagJpaRepository;
 
+
+    @Override
+    public List<TagEntity> findTagsByStoreId(Long storeId) {
+        return tagJpaRepository.findByStoreId(storeId)
+                .stream()
+                .map(this::tagToDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TagEntity> findTagsByStoreIds(List<Long> storeIds) {
+        return tagJpaRepository.findByStoreIds(storeIds)
+                .stream()
+                .map(this::tagToDomain)
+                .collect(Collectors.toList());
+    }
+
+    private TagEntity tagToDomain(TagEntity entity) {
+        return TagEntity.builder()
+                .id(entity.getId())
+                .tagName(entity.getTagName())
+                .tagCategory(entity.getTagCategory())
+                .tagColor(entity.getTagColor())
+                .sortOrder(entity.getSortOrder())
+                .isActive(entity.getIsActive())
+                .clickCount(entity.getClickCount())
+                .build();
+    }
     @Override
     public List<Store> findStoresByOwnerId(Long ownerId) {
         return storeJpaRepository.findByOwnerId(ownerId)
