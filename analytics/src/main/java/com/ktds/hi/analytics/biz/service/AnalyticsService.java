@@ -34,7 +34,7 @@ public class AnalyticsService implements AnalyticsUseCase {
     private final EventPort eventPort;
     
     @Override
-    @Cacheable(value = "storeAnalytics", key = "#storeId")
+    // @Cacheable(value = "storeAnalytics", key = "#storeId")
     public StoreAnalyticsResponse getStoreAnalytics(Long storeId) {
         log.info("매장 분석 데이터 조회 시작: storeId={}", storeId);
         
@@ -88,11 +88,23 @@ public class AnalyticsService implements AnalyticsUseCase {
     // ... 나머지 메서드들은 이전과 동일 ...
     
     @Override
-    @Cacheable(value = "aiFeedback", key = "#storeId")
+    // @Cacheable(value = "aiFeedback", key = "#storeId")
     public AiFeedbackDetailResponse getAIFeedbackDetail(Long storeId) {
         log.info("AI 피드백 상세 조회 시작: storeId={}", storeId);
         
         try {
+            // 1. 캐시에서 먼저 확인 (타입 안전성 보장)
+            String cacheKey = "ai_feedback_detail:store:" + storeId;
+            var cachedResult = cachePort.getAnalyticsCache(cacheKey);
+            if (cachedResult.isPresent()) {
+                Object cached = cachedResult.get();
+                if (cached instanceof AiFeedbackDetailResponse) {
+                    log.info("캐시에서 AI 피드백 반환: storeId={}", storeId);
+                    return (AiFeedbackDetailResponse) cached;
+                }
+                log.debug("AI 피드백 캐시 데이터 타입 불일치, DB에서 조회: storeId={}", storeId);
+            }
+
             // 1. 기존 AI 피드백 조회
             var aiFeedback = analyticsPort.findAIFeedbackByStoreId(storeId);
             
