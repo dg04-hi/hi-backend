@@ -1,7 +1,9 @@
 package com.ktds.hi.analytics.biz.service;
 
+import com.ktds.hi.analytics.biz.domain.ActionPlan;
 import com.ktds.hi.analytics.biz.domain.Analytics;
 import com.ktds.hi.analytics.biz.domain.AiFeedback;
+import com.ktds.hi.analytics.biz.domain.PlanStatus;
 import com.ktds.hi.analytics.biz.usecase.in.AnalyticsUseCase;
 import com.ktds.hi.analytics.biz.usecase.out.*;
 import com.ktds.hi.analytics.infra.dto.*;
@@ -32,6 +34,7 @@ public class AnalyticsService implements AnalyticsUseCase {
     private final OrderDataPort orderDataPort;
     private final CachePort cachePort;
     private final EventPort eventPort;
+    private final ActionPlanPort actionPlanPort; // 추가된 의존성
     
     @Override
     // @Cacheable(value = "storeAnalytics", key = "#storeId")
@@ -481,8 +484,13 @@ public class AnalyticsService implements AnalyticsUseCase {
                 throw new RuntimeException("AI 피드백을 찾을 수 없습니다: " + feedbackId);
             }
 
+            AiFeedback feedback = aiFeedback.get();
             // 2. 기존 AIServicePort.generateActionPlan 메서드 활용
             List<String> actionPlans = aiServicePort.generateActionPlan(aiFeedback.get());
+
+
+            // 3. DB에 실행계획 저장
+            saveGeneratedActionPlansToDatabase(feedback, actionPlans);
 
             log.info("실행계획 생성 완료: feedbackId={}, planCount={}", feedbackId, actionPlans.size());
             return actionPlans;
@@ -565,4 +573,49 @@ public class AnalyticsService implements AnalyticsUseCase {
             .build();
     }
 
+    /**
+     * 생성된 실행계획을 데이터베이스에 저장하는 메서드
+     * AI 피드백 기반으로 생성된 실행계획들을 ActionPlan 테이블에 저장
+     */
+    private void saveGeneratedActionPlansToDatabase(AiFeedback feedback, List<String> actionPlans) {
+        if (actionPlans.isEmpty()) {
+            log.info("저장할 실행계획이 없습니다: storeId={}", feedback.getStoreId());
+            return;
+        }
+
+        log.info("실행계획 DB 저장 시작: storeId={}, feedbackId={}, planCount={}",
+            feedback.getStoreId(), feedback.getId(), actionPlans.size());
+
+        for (int i = 0; i < actionPlans.size(); i++) {
+            String planContent = actionPlans.get(i);
+
+            // ActionPlan 도메인 객체 생성 (기존 ActionPlanService의 패턴과 동일하게)
+            ActionPlan actionPlan = ActionPlan.builder()
+                .storeId(feedback.getStoreId())
+                .userId(null) // AI가 생성한 계획이므로 userId는 null
+                .title("AI 추천 실행계획 " + (i + 1))
+                .description(planContent)
+                .period("1개월") // 기본 실행 기간
+                .status(PlanStatus.PLANNED)
+                .tasks(List.of(planContent)) // 생성된 계획을 tasks로 설정
+                .note("AI 피드백(ID: " + feedback.getId() + ")을 기반으로 자동 생성된 실행계획")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            try {
+                // ActionPlan 저장 (기존 ActionPlanPort 활용)
+                ActionPlan savedPlan = actionPlanPort.saveActionPlan(actionPlan);
+                log.info("실행계획 저장 완료: storeId={}, planId={}, title={}",
+                    feedback.getStoreId(), savedPlan.getId(), savedPlan.getTitle());
+
+            } catch (Exception e) {
+                log.error("실행계획 저장 실패: storeId={}, title={}",
+                    feedback.getStoreId(), actionPlan.getTitle(), e);
+                // 개별 저장 실패 시에도 다음 계획은 계속 저장 시도
+            }
+        }
+
+        log.info("실행계획 DB 저장 완료: storeId={}, 총 {}개 계획 저장",
+            feedback.getStoreId(), actionPlans.size());
+    }
 }
