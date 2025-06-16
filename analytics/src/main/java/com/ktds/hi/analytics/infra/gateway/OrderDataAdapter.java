@@ -32,9 +32,10 @@ public class OrderDataAdapter implements OrderDataPort {
         log.info("주문 통계 조회: storeId={}, period={} ~ {}", storeId, startDate, endDate);
         
         try {
-            String url = String.format("%s/api/orders/stores/%d/statistics?startDate=%s&endDate=%s",
-                    storeServiceUrl, storeId, startDate, endDate);
-            
+            String url = String.format("%s/api/stores/orders/store/%d/period?startDate=%s&endDate=%s",
+                storeServiceUrl, storeId, startDate, endDate);
+
+
             OrderStatistics statistics = restTemplate.getForObject(url, OrderStatistics.class);
             
             if (statistics != null) {
