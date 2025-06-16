@@ -1,7 +1,9 @@
 package com.ktds.hi.analytics.biz.service;
 
+import com.ktds.hi.analytics.biz.domain.ActionPlan;
 import com.ktds.hi.analytics.biz.domain.Analytics;
 import com.ktds.hi.analytics.biz.domain.AiFeedback;
+import com.ktds.hi.analytics.biz.domain.PlanStatus;
 import com.ktds.hi.analytics.biz.usecase.in.AnalyticsUseCase;
 import com.ktds.hi.analytics.biz.usecase.out.*;
 import com.ktds.hi.analytics.infra.dto.*;
@@ -23,7 +25,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class AnalyticsService implements AnalyticsUseCase {
     
     private final AnalyticsPort analyticsPort;
@@ -32,9 +34,10 @@ public class AnalyticsService implements AnalyticsUseCase {
     private final OrderDataPort orderDataPort;
     private final CachePort cachePort;
     private final EventPort eventPort;
+    private final ActionPlanPort actionPlanPort; // 추가된 의존성
     
     @Override
-    @Cacheable(value = "storeAnalytics", key = "#storeId")
+    // @Cacheable(value = "storeAnalytics", key = "#storeId")
     public StoreAnalyticsResponse getStoreAnalytics(Long storeId) {
         log.info("매장 분석 데이터 조회 시작: storeId={}", storeId);
         
@@ -43,8 +46,15 @@ public class AnalyticsService implements AnalyticsUseCase {
             String cacheKey = "analytics:store:" + storeId;
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                log.info("캐시에서 분석 데이터 반환: storeId={}", storeId);
-                return (StoreAnalyticsResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                // StoreAnalyticsResponse 타입인지 확인
+                if (cached instanceof StoreAnalyticsResponse) {
+                    log.info("캐시에서 분석 데이터 반환: storeId={}", storeId);
+                    return (StoreAnalyticsResponse) cached;
+                }
+                // LinkedHashMap인 경우 스킵하고 DB에서 조회
+                log.debug("캐시 데이터 타입 불일치, DB에서 조회: storeId={}, type={}",
+                    storeId, cached.getClass().getSimpleName());
             }
             
             // 2. 데이터베이스에서 기존 분석 데이터 조회
@@ -81,11 +91,23 @@ public class AnalyticsService implements AnalyticsUseCase {
     // ... 나머지 메서드들은 이전과 동일 ...
     
     @Override
-    @Cacheable(value = "aiFeedback", key = "#storeId")
+    // @Cacheable(value = "aiFeedback", key = "#storeId")
     public AiFeedbackDetailResponse getAIFeedbackDetail(Long storeId) {
         log.info("AI 피드백 상세 조회 시작: storeId={}", storeId);
         
         try {
+            // 1. 캐시에서 먼저 확인 (타입 안전성 보장)
+            String cacheKey = "ai_feedback_detail:store:" + storeId;
+            var cachedResult = cachePort.getAnalyticsCache(cacheKey);
+            if (cachedResult.isPresent()) {
+                Object cached = cachedResult.get();
+                if (cached instanceof AiFeedbackDetailResponse) {
+                    log.info("캐시에서 AI 피드백 반환: storeId={}", storeId);
+                    return (AiFeedbackDetailResponse) cached;
+                }
+                log.debug("AI 피드백 캐시 데이터 타입 불일치, DB에서 조회: storeId={}", storeId);
+            }
+
             // 1. 기존 AI 피드백 조회
             var aiFeedback = analyticsPort.findAIFeedbackByStoreId(storeId);
             
@@ -96,6 +118,7 @@ public class AnalyticsService implements AnalyticsUseCase {
             
             // 3. 응답 생성
             AiFeedbackDetailResponse response = AiFeedbackDetailResponse.builder()
+                    .feedbackId(aiFeedback.get().getId())
                     .storeId(storeId)
                     .summary(aiFeedback.get().getSummary())
                     .positivePoints(aiFeedback.get().getPositivePoints())
@@ -124,11 +147,15 @@ public class AnalyticsService implements AnalyticsUseCase {
 
         try {
             // 1. 캐시 키 생성
+            // 1. 캐시 키 생성 및 확인
             String cacheKey = String.format("statistics:store:%d:%s:%s", storeId, startDate, endDate);
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                log.info("캐시에서 통계 데이터 반환: storeId={}", storeId);
-                return (StoreStatisticsResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                if (cached instanceof StoreStatisticsResponse) {
+                    log.info("캐시에서 통계 데이터 반환: storeId={}", storeId);
+                    return (StoreStatisticsResponse) cached;
+                }
             }
 
             // 2. 주문 통계 데이터 조회 (실제 OrderStatistics 도메인 필드 사용)
@@ -168,7 +195,10 @@ public class AnalyticsService implements AnalyticsUseCase {
             String cacheKey = "ai_feedback_summary:store:" + storeId;
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                return (AiFeedbackSummaryResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                if (cached instanceof AiFeedbackSummaryResponse) {
+                    return (AiFeedbackSummaryResponse) cached;
+                }
             }
 
             // 2. AI 피드백 조회
@@ -219,7 +249,10 @@ public class AnalyticsService implements AnalyticsUseCase {
             String cacheKey = "review_analysis:store:" + storeId;
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                return (ReviewAnalysisResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                if (cached instanceof ReviewAnalysisResponse) {
+                    return (ReviewAnalysisResponse) cached;
+                }
             }
 
             // 2. 최근 리뷰 데이터 조회 (30일)
@@ -440,19 +473,25 @@ public class AnalyticsService implements AnalyticsUseCase {
     }
 
     @Override
+    @Transactional
     public List<String> generateActionPlansFromFeedback(Long feedbackId) {
         log.info("실행계획 생성: feedbackId={}", feedbackId);
 
         try {
             // 1. AI 피드백 조회
-            var aiFeedback = analyticsPort.findAIFeedbackByStoreId(feedbackId); // 실제로는 feedbackId로 조회하는 메서드 필요
+            var aiFeedback = analyticsPort.findAIFeedbackById(feedbackId);
 
             if (aiFeedback.isEmpty()) {
                 throw new RuntimeException("AI 피드백을 찾을 수 없습니다: " + feedbackId);
             }
 
+            AiFeedback feedback = aiFeedback.get();
             // 2. 기존 AIServicePort.generateActionPlan 메서드 활용
             List<String> actionPlans = aiServicePort.generateActionPlan(aiFeedback.get());
+
+
+            // 3. DB에 실행계획 저장
+            saveGeneratedActionPlansToDatabase(feedback, actionPlans);
 
             log.info("실행계획 생성 완료: feedbackId={}, planCount={}", feedbackId, actionPlans.size());
             return actionPlans;
@@ -474,6 +513,8 @@ public class AnalyticsService implements AnalyticsUseCase {
         try {
             // 1. 리뷰 데이터 수집
             List<String> reviewData = externalReviewPort.getRecentReviews(storeId, days);
+
+            log.info("review Data check ===> {}", reviewData);
 
             if (reviewData.isEmpty()) {
                 log.warn("AI 피드백 생성을 위한 리뷰 데이터가 없습니다: storeId={}", storeId);
@@ -533,4 +574,49 @@ public class AnalyticsService implements AnalyticsUseCase {
             .build();
     }
 
+    /**
+     * 생성된 실행계획을 데이터베이스에 저장하는 메서드
+     * AI 피드백 기반으로 생성된 실행계획들을 ActionPlan 테이블에 저장
+     */
+    private void saveGeneratedActionPlansToDatabase(AiFeedback feedback, List<String> actionPlans) {
+        if (actionPlans.isEmpty()) {
+            log.info("저장할 실행계획이 없습니다: storeId={}", feedback.getStoreId());
+            return;
+        }
+
+        log.info("실행계획 DB 저장 시작: storeId={}, feedbackId={}, planCount={}",
+            feedback.getStoreId(), feedback.getId(), actionPlans.size());
+
+        for (int i = 0; i < actionPlans.size(); i++) {
+            String planContent = actionPlans.get(i);
+
+            // ActionPlan 도메인 객체 생성 (기존 ActionPlanService의 패턴과 동일하게)
+            ActionPlan actionPlan = ActionPlan.builder()
+                .storeId(feedback.getStoreId())
+                .userId(1L) // AI가 생성한 계획이므로 userId는 null
+                .title("AI 추천 실행계획 " + (i + 1))
+                .description(planContent)
+                .period("1개월") // 기본 실행 기간
+                .status(PlanStatus.PLANNED)
+                .tasks(List.of(planContent)) // 생성된 계획을 tasks로 설정
+                .note("AI 피드백(ID: " + feedback.getId() + ")을 기반으로 자동 생성된 실행계획")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+            try {
+                // ActionPlan 저장 (기존 ActionPlanPort 활용)
+                ActionPlan savedPlan = actionPlanPort.saveActionPlan(actionPlan);
+                log.info("실행계획 저장 완료: storeId={}, planId={}, title={}",
+                    feedback.getStoreId(), savedPlan.getId(), savedPlan.getTitle());
+
+            } catch (Exception e) {
+                log.error("실행계획 저장 실패: storeId={}, title={}",
+                    feedback.getStoreId(), actionPlan.getTitle(), e);
+                // 개별 저장 실패 시에도 다음 계획은 계속 저장 시도
+            }
+        }
+
+        log.info("실행계획 DB 저장 완료: storeId={}, 총 {}개 계획 저장",
+            feedback.getStoreId(), actionPlans.size());
+    }
 }

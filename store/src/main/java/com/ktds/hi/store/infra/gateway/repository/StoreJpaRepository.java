@@ -21,6 +21,9 @@ import java.util.Optional;
 @Repository
 public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
 
+    @Query("SELECT s FROM StoreEntity s WHERE s.status = 'ACTIVE' ORDER BY s.rating DESC")
+    Page<StoreEntity> findAllByOrderByRatingDesc(Pageable pageable);
+
     /**
      * 점주 ID로 매장 목록 조회
      */
@@ -49,9 +52,18 @@ public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
     /**
      * 평점 기준 내림차순으로 매장 조회
      */
-    @Query("SELECT s FROM StoreEntity s ORDER BY s.rating DESC")
-    Page<StoreEntity> findAllByOrderByRatingDesc(Pageable pageable);
+    @Query(value = "SELECT DISTINCT s.* FROM stores s " +
+            "WHERE EXISTS (SELECT 1 FROM store_tags st " +
+            "WHERE st.store_id = s.id AND st.tag_name IN :tagNames) " +
+            "AND s.status = 'ACTIVE'", nativeQuery = true)
+    List<StoreEntity> findByTagNamesIn(@Param("tagNames") List<String> tagNames);
 
+    @Query(value = "SELECT s.* FROM stores s " +
+            "WHERE (SELECT COUNT(DISTINCT st.tag_name) FROM store_tags st " +
+            "WHERE st.store_id = s.id AND st.tag_name IN :tagNames) = :tagCount " +
+            "AND s.status = 'ACTIVE'", nativeQuery = true)
+    List<StoreEntity> findByAllTagNames(@Param("tagNames") List<String> tagNames,
+                                        @Param("tagCount") Integer tagCount);
     /**
      * 점주별 매장 수 조회
      */

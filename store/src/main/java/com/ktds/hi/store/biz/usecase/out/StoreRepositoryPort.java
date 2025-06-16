@@ -15,6 +15,16 @@ import java.util.Optional;
 public interface StoreRepositoryPort {
 
     /**
+     * 태그로 매장 검색 (OR 조건)
+     */
+    List<Store> findStoresByTagNames(List<String> tagNames);
+
+    /**
+     * 모든 태그를 포함하는 매장 검색 (AND 조건)
+     */
+    List<Store> findStoresByAllTagNames(List<String> tagNames);
+
+    /**
      * 점주 ID로 매장 목록 조회
      *
      * @param ownerId 점주 ID

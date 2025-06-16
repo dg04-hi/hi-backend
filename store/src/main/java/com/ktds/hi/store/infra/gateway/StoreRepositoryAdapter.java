@@ -39,6 +39,22 @@ public class StoreRepositoryAdapter implements StoreRepositoryPort {
     }
 
     @Override
+    public List<Store> findStoresByTagNames(List<String> tagNames) {
+        return storeJpaRepository.findByTagNamesIn(tagNames)
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Store> findStoresByAllTagNames(List<String> tagNames) {
+        return storeJpaRepository.findByAllTagNames(tagNames, tagNames.size())
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Optional<Store> findStoreById(Long storeId) {
         return storeJpaRepository.findById(storeId)
                 .map(this::toDomain);

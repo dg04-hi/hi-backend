@@ -39,7 +39,7 @@ ai-api:
   claude:
     api-key: ${CLAUDE_API_KEY:}
     base-url: https://api.anthropic.com
-    model: claude-3-sonnet-20240229
+    model: claude-sonnet-4-20250514
 
 #external-api:
 #  openai:
