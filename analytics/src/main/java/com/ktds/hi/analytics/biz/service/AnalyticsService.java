@@ -43,8 +43,15 @@ public class AnalyticsService implements AnalyticsUseCase {
             String cacheKey = "analytics:store:" + storeId;
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                log.info("캐시에서 분석 데이터 반환: storeId={}", storeId);
-                return (StoreAnalyticsResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                // StoreAnalyticsResponse 타입인지 확인
+                if (cached instanceof StoreAnalyticsResponse) {
+                    log.info("캐시에서 분석 데이터 반환: storeId={}", storeId);
+                    return (StoreAnalyticsResponse) cached;
+                }
+                // LinkedHashMap인 경우 스킵하고 DB에서 조회
+                log.debug("캐시 데이터 타입 불일치, DB에서 조회: storeId={}, type={}",
+                    storeId, cached.getClass().getSimpleName());
             }
             
             // 2. 데이터베이스에서 기존 분석 데이터 조회
@@ -124,11 +131,15 @@ public class AnalyticsService implements AnalyticsUseCase {
 
         try {
             // 1. 캐시 키 생성
+            // 1. 캐시 키 생성 및 확인
             String cacheKey = String.format("statistics:store:%d:%s:%s", storeId, startDate, endDate);
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                log.info("캐시에서 통계 데이터 반환: storeId={}", storeId);
-                return (StoreStatisticsResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                if (cached instanceof StoreStatisticsResponse) {
+                    log.info("캐시에서 통계 데이터 반환: storeId={}", storeId);
+                    return (StoreStatisticsResponse) cached;
+                }
             }
 
             // 2. 주문 통계 데이터 조회 (실제 OrderStatistics 도메인 필드 사용)
@@ -168,7 +179,10 @@ public class AnalyticsService implements AnalyticsUseCase {
             String cacheKey = "ai_feedback_summary:store:" + storeId;
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                return (AiFeedbackSummaryResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                if (cached instanceof AiFeedbackSummaryResponse) {
+                    return (AiFeedbackSummaryResponse) cached;
+                }
             }
 
             // 2. AI 피드백 조회
@@ -219,7 +233,10 @@ public class AnalyticsService implements AnalyticsUseCase {
             String cacheKey = "review_analysis:store:" + storeId;
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
             if (cachedResult.isPresent()) {
-                return (ReviewAnalysisResponse) cachedResult.get();
+                Object cached = cachedResult.get();
+                if (cached instanceof ReviewAnalysisResponse) {
+                    return (ReviewAnalysisResponse) cached;
+                }
             }
 
             // 2. 최근 리뷰 데이터 조회 (30일)
