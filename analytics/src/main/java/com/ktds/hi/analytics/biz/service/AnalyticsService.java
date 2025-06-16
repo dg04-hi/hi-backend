@@ -473,6 +473,7 @@ public class AnalyticsService implements AnalyticsUseCase {
     }
 
     @Override
+    @Transactional
     public List<String> generateActionPlansFromFeedback(Long feedbackId) {
         log.info("실행계획 생성: feedbackId={}", feedbackId);
 
@@ -592,7 +593,7 @@ public class AnalyticsService implements AnalyticsUseCase {
             // ActionPlan 도메인 객체 생성 (기존 ActionPlanService의 패턴과 동일하게)
             ActionPlan actionPlan = ActionPlan.builder()
                 .storeId(feedback.getStoreId())
-                .userId(null) // AI가 생성한 계획이므로 userId는 null
+                .userId(1L) // AI가 생성한 계획이므로 userId는 null
                 .title("AI 추천 실행계획 " + (i + 1))
                 .description(planContent)
                 .period("1개월") // 기본 실행 기간
