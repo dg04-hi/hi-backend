@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -96,6 +97,9 @@ public class AIServiceAdapter implements AIServicePort {
             throw new RuntimeException("AI 피드백 생성에 실패했습니다.", e);
         }
     }
+
+
+
     
     @Override
     public SentimentType analyzeSentiment(String content) {
@@ -175,40 +179,70 @@ public class AIServiceAdapter implements AIServicePort {
      * 긍정적 요소 생성
      */
     private List<String> generatePositivePoints(List<String> reviewData, List<SentimentType> sentiments) {
-        // 실제로는 자연어 처리를 통해 긍정적 키워드 추출
-        return Arrays.asList(
-                "음식 맛에 대한 긍정적 평가가 많습니다",
-                "직원 서비스에 대한 만족도가 높습니다",
-                "가격 대비 만족도가 좋습니다"
-        );
+        List<String> positivePoints = new ArrayList<>();
+
+        long positiveCount = sentiments.stream().mapToLong(s -> s == SentimentType.POSITIVE ? 1 : 0).sum();
+        double positiveRate = (double) positiveCount / reviewData.size() * 100;
+
+        if (positiveRate > 70) {
+            positivePoints.add("고객 만족도가 매우 높습니다");
+            positivePoints.add("전반적으로 긍정적인 평가를 받고 있습니다");
+            positivePoints.add("재방문 의향이 높은 고객들이 많습니다");
+        } else if (positiveRate > 50) {
+            positivePoints.add("평균 이상의 고객 만족도를 보입니다");
+            positivePoints.add("많은 고객들이 만족하고 있습니다");
+        } else {
+            positivePoints.add("일부 고객들이 긍정적으로 평가하고 있습니다");
+            positivePoints.add("개선의 여지가 있습니다");
+        }
+
+        return positivePoints;
     }
     
     /**
      * 개선점 생성
      */
     private List<String> generateImprovementPoints(List<String> reviewData, List<SentimentType> sentiments) {
-        // 실제로는 자연어 처리를 통해 부정적 키워드 추출
-        return Arrays.asList(
-                "배달 시간 단축이 필요합니다",
-                "음식 포장 상태 개선이 필요합니다",
-                "메뉴 다양성 확대를 고려해보세요"
-        );
+        List<String> improvementPoints = new ArrayList<>();
+
+        long negativeCount = sentiments.stream().mapToLong(s -> s == SentimentType.NEGATIVE ? 1 : 0).sum();
+        double negativeRate = (double) negativeCount / reviewData.size() * 100;
+
+        if (negativeRate > 30) {
+            improvementPoints.add("고객 서비스 품질 개선이 시급합니다");
+            improvementPoints.add("부정적 피드백에 대한 체계적 대응이 필요합니다");
+            improvementPoints.add("근본적인 서비스 개선 방안을 마련해야 합니다");
+        } else if (negativeRate > 15) {
+            improvementPoints.add("일부 서비스 영역에서 개선이 필요합니다");
+            improvementPoints.add("고객 만족도 향상을 위한 노력이 필요합니다");
+        } else {
+            improvementPoints.add("현재 서비스 수준을 유지하며 세부 개선점을 찾아보세요");
+            improvementPoints.add("더 높은 고객 만족을 위한 차별화 요소를 개발하세요");
+        }
+
+        return improvementPoints;
     }
     
     /**
      * 추천사항 생성
      */
     private List<String> generateRecommendations(double positiveRate, double negativeRate) {
-        List<String> recommendations = Arrays.asList(
-                "고객 피드백을 정기적으로 모니터링하고 대응하세요",
-                "리뷰에 적극적으로 댓글을 달아 고객과 소통하세요",
-                "메뉴 품질 관리 체계를 강화하세요"
-        );
-        
-        if (negativeRate > 30) {
-            recommendations.add("긴급히 서비스 품질 개선 계획을 수립하세요");
+        List<String> recommendations = new ArrayList<>();
+
+        if (positiveRate > 70) {
+            recommendations.add("현재의 우수한 서비스를 유지하면서 브랜드 가치를 높이세요");
+            recommendations.add("긍정적 리뷰를 마케팅 자료로 활용하세요");
+            recommendations.add("고객 충성도 프로그램을 도입하세요");
+        } else if (negativeRate > 30) {
+            recommendations.add("고객 불만사항에 대한 즉각적인 대응 체계를 구축하세요");
+            recommendations.add("직원 교육을 통한 서비스 품질 향상에 집중하세요");
+            recommendations.add("고객 피드백 수집 및 분석 프로세스를 강화하세요");
+        } else {
+            recommendations.add("지속적인 품질 관리와 고객 만족도 모니터링을 실시하세요");
+            recommendations.add("차별화된 서비스 제공을 통해 경쟁력을 강화하세요");
+            recommendations.add("고객과의 소통을 늘려 관계를 강화하세요");
         }
-        
+
         return recommendations;
     }
     
@@ -216,25 +250,34 @@ public class AIServiceAdapter implements AIServicePort {
      * 신뢰도 점수 계산
      */
     private double calculateConfidenceScore(int reviewCount) {
-        if (reviewCount >= 100) return 0.95;
-        if (reviewCount >= 50) return 0.85;
-        if (reviewCount >= 20) return 0.75;
-        if (reviewCount >= 10) return 0.65;
-        return 0.5;
+        if (reviewCount >= 50) {
+            return 0.9;
+        } else if (reviewCount >= 20) {
+            return 0.75;
+        } else if (reviewCount >= 10) {
+            return 0.6;
+        } else if (reviewCount >= 5) {
+            return 0.4;
+        } else {
+            return 0.2;
+        }
     }
     
     /**
      * 개선점을 실행 계획으로 변환
      */
     private String convertToActionPlan(String improvementPoint) {
-        // 개선점을 구체적인 실행 계획으로 변환하는 로직
-        if (improvementPoint.contains("배달 시간")) {
-            return "배달 시간 단축을 위한 배달 경로 최적화 및 인력 증원 검토";
-        } else if (improvementPoint.contains("포장")) {
-            return "음식 포장 재료 교체 및 포장 방법 개선";
+        // 개선점을 구체적인 실행계획으로 변환
+        if (improvementPoint.contains("서비스 품질")) {
+            return "직원 서비스 교육 프로그램 실시 (월 1회, 2시간)";
+        } else if (improvementPoint.contains("대기시간")) {
+            return "주문 처리 시스템 개선 및 대기열 관리 체계 도입";
+        } else if (improvementPoint.contains("가격")) {
+            return "경쟁사 가격 분석 및 합리적 가격 정책 수립";
         } else if (improvementPoint.contains("메뉴")) {
-            return "고객 선호도 조사를 통한 신메뉴 개발 계획 수립";
+            return "고객 선호도 조사를 통한 메뉴 다양화 방안 검토";
+        } else {
+            return "고객 피드백 기반 서비스 개선 계획 수립";
         }
-        return improvementPoint + "을 위한 구체적인 실행 방안 수립";
     }
 }
