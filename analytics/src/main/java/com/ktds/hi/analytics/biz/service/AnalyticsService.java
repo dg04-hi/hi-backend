@@ -115,6 +115,7 @@ public class AnalyticsService implements AnalyticsUseCase {
             
             // 3. 응답 생성
             AiFeedbackDetailResponse response = AiFeedbackDetailResponse.builder()
+                    .feedbackId(aiFeedback.get().getId())
                     .storeId(storeId)
                     .summary(aiFeedback.get().getSummary())
                     .positivePoints(aiFeedback.get().getPositivePoints())

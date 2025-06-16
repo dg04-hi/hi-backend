@@ -16,7 +16,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AiFeedbackDetailResponse {
-    
+
+    private Long feedbackId;
     private Long storeId;
     private String summary;
     private List<String> positivePoints;

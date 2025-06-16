@@ -25,7 +25,7 @@ public class AiAnalysisRequest {
 	@Builder.Default
 	private Integer days = 30;
 
-	@Schema(description = "실행계획 자동 생성 여부", example = "true")
+	@Schema(description = "실행계획 자동 생성 여부", example = "false")
 	@Builder.Default
-	private Boolean generateActionPlan = true;
+	private Boolean generateActionPlan = false;
 }
