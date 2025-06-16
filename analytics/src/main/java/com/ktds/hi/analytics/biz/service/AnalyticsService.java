@@ -23,7 +23,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class AnalyticsService implements AnalyticsUseCase {
     
     private final AnalyticsPort analyticsPort;
