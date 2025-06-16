@@ -55,6 +55,12 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
         AiFeedbackEntity saved = aiFeedbackJpaRepository.save(entity);
         return toAiFeedbackDomain(saved);
     }
+
+    @Override
+    public Optional<AiFeedback> findAIFeedbackById(Long feedbackId) {
+        return aiFeedbackJpaRepository.findById(feedbackId)
+            .map(this::toAiFeedbackDomain);
+    }
     
     /**
      * Analytics Entity를 Domain으로 변환

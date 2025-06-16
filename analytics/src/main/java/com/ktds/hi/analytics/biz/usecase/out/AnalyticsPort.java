@@ -25,7 +25,13 @@ public interface AnalyticsPort {
      * 매장 ID로 AI 피드백 조회
      */
     Optional<AiFeedback> findAIFeedbackByStoreId(Long storeId);
-    
+
+    /**
+     * AI 피드백 ID로 조회 (추가된 메서드)
+     */
+    Optional<AiFeedback> findAIFeedbackById(Long feedbackId);
+
+
     /**
      * AI 피드백 저장
      */

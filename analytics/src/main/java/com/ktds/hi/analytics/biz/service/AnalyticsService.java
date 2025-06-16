@@ -445,7 +445,7 @@ public class AnalyticsService implements AnalyticsUseCase {
 
         try {
             // 1. AI 피드백 조회
-            var aiFeedback = analyticsPort.findAIFeedbackByStoreId(feedbackId); // 실제로는 feedbackId로 조회하는 메서드 필요
+            var aiFeedback = analyticsPort.findAIFeedbackById(feedbackId);
 
             if (aiFeedback.isEmpty()) {
                 throw new RuntimeException("AI 피드백을 찾을 수 없습니다: " + feedbackId);
