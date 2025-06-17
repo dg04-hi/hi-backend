@@ -1,4 +1,3 @@
-// common/src/main/java/com/ktds/hi/common/dto/SuccessResponse.java
 package com.ktds.hi.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
