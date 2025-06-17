@@ -1,12 +1,21 @@
 package com.ktds.hi.store.infra.gateway;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.store.biz.usecase.out.ExternalPlatformPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.time.Duration;
+import java.util.*;
 
 /**
  * 외부 플랫폼 어댑터 클래스
@@ -18,6 +27,8 @@ import org.springframework.web.client.RestTemplate;
 public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
     private final RestTemplate restTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${external-api.naver.client-id:}")
     private String naverClientId;
@@ -64,14 +75,23 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
         log.info("카카오 리뷰 동기화 시작: storeId={}, externalStoreId={}", storeId, externalStoreId);
 
         try {
-            // 카카오 API 호출 (Mock)
+            // 기존 API 호출 로직 그대로 유지 ⭐
+            String url = "http://kakao-review-api.20.249.191.180.nip.io/analyze";
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("store_id", storeId);
+            requestBody.put("days_limit", 360);
+            requestBody.put("max_time", 300);
+
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "KakaoAK " + kakaoApiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // Mock 응답
-            int syncedCount = 12;
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            log.info("카카오 리뷰 동기화 완료: storeId={}, syncedCount={}", storeId, syncedCount);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+            int syncedCount = parseAndStoreToRedis(storeId, "KAKAO", response.getBody());
+
             return syncedCount;
 
         } catch (Exception e) {
@@ -79,6 +99,8 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
             return 0;
         }
     }
+
+
 
     @Override
     public int syncGoogleReviews(Long storeId, String externalStoreId) {
@@ -284,11 +306,28 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
     }
 
     /**
-     * 외부 연동 정보 저장
+     * 외부 연동 정보 저장 Redis 활용
      */
     private void saveExternalConnection(Long storeId, String platform, String username) {
-        // 실제로는 ExternalPlatformEntity에 연동 정보 저장
-        log.info("외부 연동 정보 저장: storeId={}, platform={}, username={}", storeId, platform, username);
+        try {
+            String connectionKey = String.format("external:connection:%d:%s", storeId, platform);
+
+            Map<String, Object> connectionData = new HashMap<>();
+            connectionData.put("storeId", storeId);
+            connectionData.put("platform", platform);
+            connectionData.put("username", username);
+            connectionData.put("connectedAt", System.currentTimeMillis());
+            connectionData.put("isActive", true);
+
+            redisTemplate.opsForValue().set(connectionKey, connectionData, Duration.ofDays(30));
+
+            log.info("외부 연동 정보 Redis 저장 완료: storeId={}, platform={}, username={}",
+                    storeId, platform, username);
+
+        } catch (Exception e) {
+            log.error("외부 연동 정보 저장 실패: storeId={}, platform={}, error={}",
+                    storeId, platform, e.getMessage());
+        }
     }
 
     /**
@@ -298,4 +337,115 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
         // 실제로는 ExternalPlatformEntity에서 연동 정보 제거
         log.info("외부 연동 정보 제거: storeId={}, platform={}", storeId, platform);
     }
+
+    /**
+     * 카카오 응답 파싱 및 Redis 저장 (새로 추가)
+     */
+    private int parseAndStoreToRedis(Long storeId, String platform, String responseBody) {
+        try {
+            log.info("카카오 API 응답: {}", responseBody);
+
+            // JSON 파싱
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode reviewsNode = rootNode.get("reviews");
+
+            if (reviewsNode == null || !reviewsNode.isArray()) {
+                return 0;
+            }
+
+            // 리뷰 데이터 변환
+            List<Map<String, Object>> parsedReviews = new ArrayList<>();
+            for (JsonNode reviewNode : reviewsNode) {
+                Map<String, Object> review = new HashMap<>();
+                review.put("reviewId", reviewNode.get("review_id").asText());
+                review.put("content", reviewNode.get("content").asText());
+                review.put("rating", reviewNode.get("rating").asInt());
+                review.put("authorName", reviewNode.get("author_name").asText());
+                review.put("reviewDate", reviewNode.get("review_date").asText());
+                review.put("platform", platform);
+                parsedReviews.add(review);
+            }
+
+            if (!parsedReviews.isEmpty()) {
+                // Redis에 저장 (TTL: 24시간)
+                String redisKey = String.format("external:reviews:pending:%d:%s:%d",
+                        storeId, platform, System.currentTimeMillis());
+
+                Map<String, Object> cacheData = new HashMap<>();
+                cacheData.put("storeId", storeId);
+                cacheData.put("platform", platform);
+                cacheData.put("reviews", parsedReviews);
+                cacheData.put("status", "PENDING");
+                cacheData.put("createdAt", System.currentTimeMillis());
+                cacheData.put("retryCount", 0);
+
+                redisTemplate.opsForValue().set(redisKey, cacheData, Duration.ofHours(24));
+
+                log.info("Redis에 리뷰 데이터 저장 완료: key={}, count={}", redisKey, parsedReviews.size());
+
+                // 동기화 상태 업데이트
+                updateSyncStatus(storeId, platform, "SUCCESS", parsedReviews.size());
+            }
+
+            return parsedReviews.size();
+
+        } catch (Exception e) {
+            log.error("카카오 응답 파싱 및 Redis 저장 실패: {}", e.getMessage());
+            updateSyncStatus(storeId, platform, "FAILED", 0);
+            return 0;
+        }
+    }
+
+    /**
+     * 동기화 상태 Redis에 저장
+     */
+    private void updateSyncStatus(Long storeId, String platform, String status, int count) {
+        try {
+            String statusKey = String.format("external:sync:status:%d:%s", storeId, platform);
+
+            Map<String, Object> statusData = new HashMap<>();
+            statusData.put("storeId", storeId);
+            statusData.put("platform", platform);
+            statusData.put("status", status);
+            statusData.put("syncedCount", count);
+            statusData.put("timestamp", System.currentTimeMillis());
+
+            redisTemplate.opsForValue().set(statusKey, statusData, Duration.ofDays(1));
+
+        } catch (Exception e) {
+            log.warn("동기화 상태 저장 실패: storeId={}, platform={}", storeId, platform);
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> getTempReviews(Long storeId, String platform) {
+        try {
+            // Redis에서 최신 pending 데이터 조회
+            String pattern = String.format("external:reviews:pending:%d:%s:*", storeId, platform);
+            Set<String> keys = redisTemplate.keys(pattern);
+
+            if (keys != null && !keys.isEmpty()) {
+                // 가장 최신 키 선택 (타임스탬프 기준)
+                String latestKey = keys.stream()
+                        .max(Comparator.comparing(key -> Long.parseLong(key.substring(key.lastIndexOf(':') + 1))))
+                        .orElse(null);
+
+                if (latestKey != null) {
+                    Map<String, Object> cacheData = (Map<String, Object>) redisTemplate.opsForValue().get(latestKey);
+                    if (cacheData != null) {
+                        return (List<Map<String, Object>>) cacheData.get("reviews");
+                    }
+                }
+            }
+
+            return new ArrayList<>();
+
+        } catch (Exception e) {
+            log.error("Redis에서 임시 리뷰 데이터 조회 실패: storeId={}, platform={}", storeId, platform);
+            return new ArrayList<>();
+        }
+    }
+
+
+
 }

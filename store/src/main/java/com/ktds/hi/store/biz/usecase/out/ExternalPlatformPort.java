@@ -1,5 +1,8 @@
 package com.ktds.hi.store.biz.usecase.out;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 외부 플랫폼 포트 인터페이스
  * 외부 플랫폼 연동 기능을 정의
@@ -93,4 +96,6 @@ public interface ExternalPlatformPort {
      * @return 연동 해제 성공 여부
      */
     boolean disconnectPlatform(Long storeId, String platform);
+
+    public List<Map<String, Object>> getTempReviews(Long storeId, String platform);
 }

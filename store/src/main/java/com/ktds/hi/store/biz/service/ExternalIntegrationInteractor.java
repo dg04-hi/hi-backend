@@ -1,5 +1,9 @@
 package com.ktds.hi.store.biz.service;
 
+import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.EventHubClientBuilder;
+import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.store.biz.usecase.in.ExternalIntegrationUseCase;
 import com.ktds.hi.store.biz.usecase.out.ExternalPlatformPort;
 import com.ktds.hi.store.biz.usecase.out.EventPort;
@@ -11,8 +15,12 @@ import com.ktds.hi.common.exception.BusinessException;
 import com.ktds.hi.common.exception.ExternalServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.util.*;
 
 /**
  * 외부 연동 인터랙터 클래스
@@ -26,6 +34,8 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
     private final ExternalPlatformPort externalPlatformPort;
     private final EventPort eventPort;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Override
     public ExternalSyncResponse syncReviews(Long storeId, ExternalSyncRequest request) {
@@ -223,11 +233,110 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
     private void publishSyncEvent(Long storeId, String platform, int syncedCount) {
         try {
-            // 동기화 이벤트 발행 로직
-            log.info("동기화 이벤트 발행: storeId={}, platform={}, syncedCount={}",
+            // 기존 Event Hub 설정 그대로 유지 ⭐
+            EventHubProducerClient producer = new EventHubClientBuilder()
+                    .connectionString(System.getenv("EVENTHUB_CONNECTION_STRING"), "review-sync")
+                    .buildProducerClient();
+
+            // Redis에서 실제 리뷰 데이터 조회
+            Map<String, Object> eventPayload = createEventPayloadFromRedis(storeId, platform, syncedCount);
+            String payloadJson = objectMapper.writeValueAsString(eventPayload);
+
+            EventData eventData = new EventData(payloadJson);
+
+            // 메타데이터 추가
+            eventData.getProperties().put("storeId", storeId.toString());
+            eventData.getProperties().put("platform", platform);
+            eventData.getProperties().put("eventType", "EXTERNAL_REVIEW_SYNC");
+
+            producer.send(Arrays.asList(eventData));
+
+            // 성공 시 Redis에서 해당 데이터 삭제 또는 상태 변경
+            markAsProcessedInRedis(storeId, platform);
+
+            log.info("동기화 이벤트 발행 완료: storeId={}, platform={}, syncedCount={}",
                     storeId, platform, syncedCount);
+
         } catch (Exception e) {
-            log.warn("동기화 이벤트 발행 실패: {}", e.getMessage());
+            log.error("동기화 이벤트 발행 실패: storeId={}, platform={}, error={}",
+                    storeId, platform, e.getMessage(), e);
+
+            // 실패 시 재시도 큐로 이동
+            moveToRetryQueue(storeId, platform, e.getMessage());
+        }
+    }
+
+    /**
+     * Redis에서 이벤트 페이로드 생성 (새로 추가)
+     */
+    private Map<String, Object> createEventPayloadFromRedis(Long storeId, String platform, int syncedCount) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("eventType", "EXTERNAL_REVIEW_SYNC");
+        payload.put("storeId", storeId);
+        payload.put("platform", platform);
+        payload.put("syncedCount", syncedCount);
+        payload.put("timestamp", System.currentTimeMillis());
+
+        // Redis에서 실제 리뷰 데이터 조회
+        List<Map<String, Object>> reviews = externalPlatformPort.getTempReviews(storeId, platform);
+        payload.put("reviews", reviews);
+
+        return payload;
+    }
+
+    /**
+     * Redis에서 처리 완료 표시 (새로 추가)
+     */
+    private void markAsProcessedInRedis(Long storeId, String platform) {
+        try {
+            String pattern = String.format("external:reviews:pending:%d:%s:*", storeId, platform);
+            Set<String> keys = redisTemplate.keys(pattern);
+
+            if (keys != null) {
+                for (String key : keys) {
+                    redisTemplate.delete(key);
+                }
+            }
+
+            log.info("Redis에서 처리 완료된 데이터 삭제: storeId={}, platform={}", storeId, platform);
+
+        } catch (Exception e) {
+            log.warn("Redis 데이터 정리 실패: storeId={}, platform={}", storeId, platform);
+        }
+    }
+
+    /**
+     * 재시도 큐로 이동 (새로 추가)
+     */
+    private void moveToRetryQueue(Long storeId, String platform, String errorMessage) {
+        try {
+            String pattern = String.format("external:reviews:pending:%d:%s:*", storeId, platform);
+            Set<String> keys = redisTemplate.keys(pattern);
+
+            if (keys != null && !keys.isEmpty()) {
+                String pendingKey = keys.iterator().next();
+                Map<String, Object> cacheData = (Map<String, Object>) redisTemplate.opsForValue().get(pendingKey);
+
+                if (cacheData != null) {
+                    // 재시도 횟수 증가
+                    Integer retryCount = (Integer) cacheData.getOrDefault("retryCount", 0);
+                    cacheData.put("retryCount", retryCount + 1);
+                    cacheData.put("lastError", errorMessage);
+                    cacheData.put("status", "RETRY");
+
+                    // 재시도 큐로 이동
+                    String retryKey = pendingKey.replace("pending", "retry");
+                    redisTemplate.opsForValue().set(retryKey, cacheData, Duration.ofHours(12));
+
+                    // 원본 삭제
+                    redisTemplate.delete(pendingKey);
+
+                    log.info("재시도 큐로 이동: retryKey={}, retryCount={}", retryKey, retryCount + 1);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("재시도 큐 이동 실패: storeId={}, platform={}", storeId, platform);
         }
     }
 

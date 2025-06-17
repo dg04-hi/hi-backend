@@ -5,6 +5,9 @@ import com.ktds.hi.store.infra.dto.ExternalSyncResponse;
 import com.ktds.hi.store.infra.dto.ExternalConnectRequest;
 import com.ktds.hi.store.infra.dto.ExternalConnectResponse;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 외부 연동 유스케이스 인터페이스
  * 외부 플랫폼 연동 관련 비즈니스 로직을 정의

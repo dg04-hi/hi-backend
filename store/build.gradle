@@ -4,5 +4,5 @@ dependencies {
     // External API Integration
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-
+    implementation 'com.azure:azure-messaging-eventhubs:5.15.0'
 }
