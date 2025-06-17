@@ -33,7 +33,7 @@ public class ReviewEntity {
     @Column(name = "store_id", nullable = false)
     private Long storeId;
     
-    @Column(name = "member_id", nullable = false)
+    @Column(name = "member_id", nullable = true)
     private Long memberId;
     
     @Column(name = "member_nickname", nullable = false, length = 50)
