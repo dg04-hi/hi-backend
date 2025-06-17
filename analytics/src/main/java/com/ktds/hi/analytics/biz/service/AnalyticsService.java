@@ -115,7 +115,8 @@ public class AnalyticsService implements AnalyticsUseCase {
                 // 2. AI 피드백이 없으면 새로 생성
                 aiFeedback = Optional.of(generateAIFeedback(storeId));
             }
-            
+
+
             // 3. 응답 생성
             AiFeedbackDetailResponse response = AiFeedbackDetailResponse.builder()
                     .feedbackId(aiFeedback.get().getId())
@@ -128,6 +129,11 @@ public class AnalyticsService implements AnalyticsUseCase {
                     .confidenceScore(aiFeedback.get().getConfidenceScore())
                     .generatedAt(aiFeedback.get().getGeneratedAt())
                     .build();
+
+            //(추가) 실행계획을 조회해서, 이미 생성된 improvementPoints인지 판단
+            List<String> actionPlanTitleList = actionPlanPort.findActionPlanTitleByFeedbackId(aiFeedback.get().getId());
+            log.info("실행계획 확인 => {}", actionPlanTitleList.toString());
+            response.updateImprovementCheck(actionPlanTitleList); //이미 생성된 실행계획 추가.
             
             log.info("AI 피드백 상세 조회 완료: storeId={}", storeId);
             return response;
@@ -492,7 +498,7 @@ public class AnalyticsService implements AnalyticsUseCase {
 
 
             // 3. DB에 실행계획 저장
-            saveGeneratedActionPlansToDatabase(feedback, actionPlans);
+            saveGeneratedActionPlansToDatabase(request.getActionPlanSelect(), feedback, actionPlans);
 
             log.info("실행계획 생성 완료: feedbackId={}, planCount={}", feedbackId, actionPlans.size());
             return actionPlans;
@@ -579,7 +585,7 @@ public class AnalyticsService implements AnalyticsUseCase {
      * 생성된 실행계획을 데이터베이스에 저장하는 메서드
      * AI 피드백 기반으로 생성된 실행계획들을 ActionPlan 테이블에 저장
      */
-    private void saveGeneratedActionPlansToDatabase(AiFeedback feedback, List<String> actionPlans) {
+    private void saveGeneratedActionPlansToDatabase(List<String> actionPlanSelect, AiFeedback feedback, List<String> actionPlans) {
         if (actionPlans.isEmpty()) {
             log.info("저장할 실행계획이 없습니다: storeId={}", feedback.getStoreId());
             return;
@@ -596,7 +602,7 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .storeId(feedback.getStoreId())
                 .userId(0L) // AI가 생성한 계획이므로 userId는 0
                 .feedbackId(feedback.getId())
-                .title("AI 추천 실행계획 " + (i + 1))
+                .title(actionPlanSelect.get(i))
                 .description(planContent)
                 .period("1개월") // 기본 실행 기간
                 .status(PlanStatus.PLANNED)
