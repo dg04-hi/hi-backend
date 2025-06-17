@@ -28,11 +28,26 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
 
     @Override
     public List<Order> findOrdersByStoreIdAndPeriod(Long storeId, LocalDateTime startDate, LocalDateTime endDate) {
-        return orderJpaRepository.findByStoreIdAndOrderDateBetween(storeId, startDate, endDate)
-                .stream()
-                .map(this::toDomain)
-                .collect(Collectors.toList());
+
+        // return orderJpaRepository.findByStoreIdAndOrderDateBetween(storeId, startDate, endDate)
+        //         .stream()
+        //         .map(this::toDomain)
+        //         .collect(Collectors.toList());
+
+        return orderJpaRepository.findByStoreIdAndOrderDateBetweenWithMenuName(storeId, startDate, endDate)
+            .stream()
+            .map(result -> {
+                OrderEntity entity = (OrderEntity) result[0];
+                String menuName = (String) result[1];
+
+                Order order = this.toDomain(entity);  // 기존 toDomain 메서드 활용
+                order.setMenuName(menuName);  // menuName만 별도로 설정
+                return order;
+            })
+            .toList();
     }
+
+
 
     @Override
     public Optional<Order> findOrderById(Long orderId) {

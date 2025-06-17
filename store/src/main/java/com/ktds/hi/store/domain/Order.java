@@ -14,6 +14,7 @@ public class Order {
     private Long id;
     private Long storeId;
     private Long menuId;
+    private String menuName;
     private Integer customerAge;
     private String customerGender;
     private BigDecimal orderAmount;

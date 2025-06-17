@@ -152,7 +152,6 @@ public class AnalyticsService implements AnalyticsUseCase {
         log.info("매장 통계 조회 시작: storeId={}, startDate={}, endDate={}", storeId, startDate, endDate);
 
         try {
-            // 1. 캐시 키 생성
             // 1. 캐시 키 생성 및 확인
             String cacheKey = String.format("statistics:store:%d:%s:%s", storeId, startDate, endDate);
             var cachedResult = cachePort.getAnalyticsCache(cacheKey);
