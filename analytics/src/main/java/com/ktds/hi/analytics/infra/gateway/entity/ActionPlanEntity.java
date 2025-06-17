@@ -49,7 +49,10 @@ public class ActionPlanEntity {
     
     @Column(name = "user_id", nullable = false)
     private Long userId;
-    
+
+    @Column(name = "feedback_id", nullable = true)
+    private Long feedbackId;
+
     @Column(name = "title", nullable = false, length = 100)
     private String title;
     

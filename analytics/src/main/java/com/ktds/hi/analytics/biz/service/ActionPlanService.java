@@ -41,6 +41,7 @@ public class ActionPlanService implements ActionPlanUseCase {
                     .map(plan -> ActionPlanListResponse.builder()
                             .id(plan.getId())
                             .title(plan.getTitle())
+                            .description(plan.getDescription())
                             .status(plan.getStatus())
                             .period(plan.getPeriod())
                             .createdAt(plan.getCreatedAt())

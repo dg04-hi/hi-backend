@@ -145,14 +145,17 @@ public class AnalyticsController {
      */
     @Operation(summary = "실행계획 생성", description = "AI 피드백을 기반으로 실행계획을 생성합니다.")
     @PostMapping("/ai-feedback/{feedbackId}/action-plans")
-    public ResponseEntity<SuccessResponse<List<String>>> generateActionPlans(
+    public ResponseEntity<SuccessResponse<Void>> generateActionPlans(
         @Parameter(description = "AI 피드백 ID", required = true)
-        @PathVariable @NotNull Long feedbackId) {
+        @PathVariable @NotNull Long feedbackId,
+        @RequestBody ActionPlanCreateRequest request) {
 
         log.info("실행계획 생성 요청: feedbackId={}", feedbackId);
 
-        List<String> actionPlans = analyticsUseCase.generateActionPlansFromFeedback(feedbackId);
+        log.info("실행계획 바디 데이터 => {}", request);
 
-        return ResponseEntity.ok(SuccessResponse.of(actionPlans, "실행계획 생성 완료"));
+        List<String> actionPlans = analyticsUseCase.generateActionPlansFromFeedback(request,feedbackId);
+
+        return ResponseEntity.ok(SuccessResponse.of("실행계획 생성 완료"));
     }
 }

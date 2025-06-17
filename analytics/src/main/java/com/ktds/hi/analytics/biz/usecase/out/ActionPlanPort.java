@@ -30,4 +30,9 @@ public interface ActionPlanPort {
      * 실행 계획 삭제
      */
     void deleteActionPlan(Long planId);
+
+    /**
+     * 피드백 id로 실행계획 title 조회
+     */
+    List<String> findActionPlanTitleByFeedbackId(Long feedbackId);
 }

@@ -52,7 +52,12 @@ public class ActionPlanRepositoryAdapter implements ActionPlanPort {
     public void deleteActionPlan(Long planId) {
         actionPlanJpaRepository.deleteById(planId);
     }
-    
+
+    @Override
+    public List<String> findActionPlanTitleByFeedbackId(Long feedbackId) {
+        return actionPlanJpaRepository.findActionPlanTitleByFeedbackId(feedbackId);
+    }
+
     /**
      * Entity를 Domain으로 변환
      */
@@ -79,6 +84,7 @@ public class ActionPlanRepositoryAdapter implements ActionPlanPort {
     private ActionPlanEntity toEntity(ActionPlan domain) {
         return ActionPlanEntity.builder()
                 .id(domain.getId())
+                .feedbackId(domain.getFeedbackId())
                 .storeId(domain.getStoreId())
                 .userId(domain.getUserId())
                 .title(domain.getTitle())

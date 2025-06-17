@@ -24,5 +24,5 @@ public interface AIServicePort {
     /**
      * 실행 계획 생성
      */
-    List<String> generateActionPlan(AiFeedback feedback);
+    List<String> generateActionPlan(List<String> actionPlanSelect, AiFeedback feedback);
 }

@@ -44,6 +44,6 @@ public interface AnalyticsUseCase {
     /**
      * AI 피드백 기반 실행계획 생성
      */
-    List<String> generateActionPlansFromFeedback(Long feedbackId);
+    List<String> generateActionPlansFromFeedback(ActionPlanCreateRequest request,Long feedbackId);
 
 }
