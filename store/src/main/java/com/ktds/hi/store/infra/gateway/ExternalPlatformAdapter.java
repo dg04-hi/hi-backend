@@ -72,7 +72,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
         log.info("카카오 리뷰 동기화 시작: storeId={}, externalStoreId={}", storeId, externalStoreId);
 
         try {
-            // 🔥 기존 URL 설정 활용하되 /analyze 엔드포인트로 변경
+            // 🔥 카카오 크롤링 서비스 실제 호출
             String url = "http://kakao-review-api-service/analyze";
 
             Map<String, Object> requestBody = new HashMap<>();
@@ -85,14 +85,14 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            // 🔥 기존 restTemplate 사용
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
-            // 🔥 기존 parseAndStoreToRedis 메서드 활용
+            // 🔥 실제 카카오 응답 파싱 및 Redis 저장
             return parseAndStoreToRedis(storeId, "KAKAO", response.getBody());
 
         } catch (Exception e) {
             log.error("카카오 리뷰 동기화 실패: storeId={}, error={}", storeId, e.getMessage(), e);
+            updateSyncStatus(storeId, "KAKAO", "FAILED", 0);
             return 0;
         }
     }
@@ -147,7 +147,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
 
     /**
-     * 카카오 응답 파싱 및 Redis 저장 (기존 메서드 수정)
+     * 카카오 응답 파싱 및 Redis 저장 (실제 응답 구조에 맞게 완전 수정)
      */
     private int parseAndStoreToRedis(Long storeId, String platform, String responseBody) {
         try {
@@ -156,25 +156,27 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
             // JSON 파싱
             JsonNode rootNode = objectMapper.readTree(responseBody);
 
-            // 🔥 실제 카카오 크롤링 서비스 응답 구조에 맞게 수정
+            // 🔥 실제 카카오 크롤링 서비스 응답 구조 체크
             if (!rootNode.has("success") || !rootNode.get("success").asBoolean()) {
                 log.warn("카카오 API 응답 실패: {}", responseBody);
+                updateSyncStatus(storeId, platform, "FAILED", 0);
                 return 0;
             }
 
             JsonNode reviewsNode = rootNode.get("reviews");
             if (reviewsNode == null || !reviewsNode.isArray()) {
                 log.warn("카카오 응답에 reviews 배열이 없음");
+                updateSyncStatus(storeId, platform, "SUCCESS", 0);
                 return 0;
             }
 
-            // 🔥 리뷰 데이터 변환 (실제 응답 구조에 맞게)
+            // 🔥 실제 카카오 응답 구조에 맞는 리뷰 데이터 변환
             List<Map<String, Object>> parsedReviews = new ArrayList<>();
             for (JsonNode reviewNode : reviewsNode) {
                 Map<String, Object> review = new HashMap<>();
 
-                // 🔑 기본 리뷰 정보
-             //   review.put("reviewId", generateReviewId(reviewNode)); 에러가 뜨ㅃ니다
+                // 🔑 기본 리뷰 정보 (실제 필드명 사용)
+                review.put("reviewId", generateReviewId(reviewNode));
                 review.put("content", reviewNode.path("content").asText(""));
                 review.put("rating", reviewNode.path("rating").asDouble(0.0));
                 review.put("reviewerName", reviewNode.path("reviewer_name").asText(""));
@@ -210,7 +212,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
             }
 
             if (!parsedReviews.isEmpty()) {
-                // 🔥 기존 Redis 저장 로직 그대로 활용
+                // 🔥 Redis에 저장
                 String redisKey = String.format("external:reviews:pending:%d:%s:%d",
                         storeId, platform, System.currentTimeMillis());
 
@@ -226,19 +228,37 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
                 log.info("Redis에 리뷰 데이터 저장 완료: key={}, count={}", redisKey, parsedReviews.size());
 
-                // 🔥 기존 동기화 상태 업데이트 메서드 활용
+                // 🔥 동기화 상태 업데이트
                 updateSyncStatus(storeId, platform, "SUCCESS", parsedReviews.size());
             }
 
             return parsedReviews.size();
 
         } catch (Exception e) {
-            log.error("카카오 응답 파싱 및 Redis 저장 실패: {}", e.getMessage());
+            log.error("카카오 응답 파싱 및 Redis 저장 실패: storeId={}, error={}", storeId, e.getMessage());
             updateSyncStatus(storeId, platform, "FAILED", 0);
             return 0;
         }
     }
 
+
+    /**
+     * 🔥 누락된 generateReviewId 메서드 추가
+     */
+    private String generateReviewId(JsonNode reviewNode) {
+        try {
+            String reviewerName = reviewNode.path("reviewer_name").asText("");
+            String date = reviewNode.path("date").asText("");
+            String content = reviewNode.path("content").asText("");
+
+            // 고유한 ID 생성 (리뷰어명 + 날짜 + 컨텐츠 해시)
+            String combined = reviewerName + "_" + date + "_" + content.hashCode();
+            return "kakao_" + Math.abs(combined.hashCode());
+        } catch (Exception e) {
+            // 예외 발생 시 타임스탬프 기반 ID 생성
+            return "kakao_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
+        }
+    }
 
     // ===== 계정 연동 메서드들 =====
 

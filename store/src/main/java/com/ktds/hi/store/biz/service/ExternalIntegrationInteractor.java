@@ -6,7 +6,6 @@ import com.azure.messaging.eventhubs.EventHubProducerClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.store.biz.usecase.in.ExternalIntegrationUseCase;
 import com.ktds.hi.store.biz.usecase.out.ExternalPlatformPort;
-import com.ktds.hi.store.biz.usecase.out.EventPort;
 import com.ktds.hi.store.infra.dto.ExternalSyncRequest;
 import com.ktds.hi.store.infra.dto.ExternalSyncResponse;
 import com.ktds.hi.store.infra.dto.ExternalConnectRequest;
