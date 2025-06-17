@@ -1,6 +1,7 @@
 package com.ktds.hi.store.biz.service;
 
 import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.EventDataBatch;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +15,7 @@ import com.ktds.hi.common.exception.BusinessException;
 import com.ktds.hi.common.exception.ExternalServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,9 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
     private final ExternalPlatformPort externalPlatformPort;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+
+    @Value("${azure.eventhub.connection-string}")
+    private String eventHubConnectionString;
 
     @Override
     public ExternalSyncResponse syncReviews(Long storeId, ExternalSyncRequest request) {
@@ -228,11 +233,14 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
             throw new BusinessException("비밀번호는 필수입니다");
         }
     }
-
+    /**
+     * Azure Event Hub로 동기화 완료 이벤트 발행 (기존 메서드 수정)
+     */
     private void publishSyncEvent(Long storeId, String platform, int syncedCount) {
         try {
+            // Azure Event Hub Producer 생성 (connection string에서 Event Hub 이름 자동 추출)
             EventHubProducerClient producer = new EventHubClientBuilder()
-                    .connectionString(System.getenv("EVENTHUB_CONNECTION_STRING"), "review-sync")
+                    .connectionString(eventHubConnectionString)
                     .buildProducerClient();
 
             // Redis에서 실제 리뷰 데이터 조회
@@ -241,25 +249,21 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
             EventData eventData = new EventData(payloadJson);
 
-            // 메타데이터 추가
-            eventData.getProperties().put("storeId", storeId.toString());
-            eventData.getProperties().put("platform", platform);
-            eventData.getProperties().put("eventType", "EXTERNAL_REVIEW_SYNC");
+            // EventDataBatch 사용
+            EventDataBatch batch = producer.createBatch();
+            if (batch.tryAdd(eventData)) {
+                producer.send(batch);
+                log.info("동기화 이벤트 발행 성공: storeId={}, platform={}, syncedCount={}",
+                        storeId, platform, syncedCount);
+            } else {
+                log.warn("이벤트 배치 추가 실패: storeId={}, platform={}", storeId, platform);
+            }
 
-            producer.send(Arrays.asList(eventData));
-
-            // 성공 시 Redis에서 해당 데이터 삭제 또는 상태 변경
-            markAsProcessedInRedis(storeId, platform);
-
-            log.info("동기화 이벤트 발행 완료: storeId={}, platform={}, syncedCount={}",
-                    storeId, platform, syncedCount);
+            producer.close();
 
         } catch (Exception e) {
             log.error("동기화 이벤트 발행 실패: storeId={}, platform={}, error={}",
                     storeId, platform, e.getMessage(), e);
-
-            // 실패 시 재시도 큐로 이동
-            moveToRetryQueue(storeId, platform, e.getMessage());
         }
     }
 

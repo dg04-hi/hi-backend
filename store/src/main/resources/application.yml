@@ -19,6 +19,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Azure Event Hub 설정 (추가)
+  azure:
+    eventhub:
+      connection-string: ${AZURE_EVENTHUB_CONNECTION_STRING:Endpoint=sb://hiorder-ns-pubsub.servicebus.windows.net/;SharedAccessKeyName=test;SharedAccessKey=aeFep3tpn1OdNGMx6h92IXOaVxLHSQyxJ+AEhO34wJM=;EntityPath=hiorder-name-pubsub}
   
   data:
     redis:
