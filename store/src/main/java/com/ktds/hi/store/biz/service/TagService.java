@@ -3,6 +3,7 @@ package com.ktds.hi.store.biz.service;
 import com.ktds.hi.store.biz.usecase.in.TagUseCase;
 import com.ktds.hi.store.biz.usecase.out.TagRepositoryPort;
 import com.ktds.hi.store.domain.Tag;
+import com.ktds.hi.store.infra.dto.response.AllTagResponse;
 import com.ktds.hi.store.infra.dto.response.TopClickedTagResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,10 +48,10 @@ public class TagService implements TagUseCase {
     }
 
     @Override
-    public List<TopClickedTagResponse> getTopClickedTags() {
+    public List<TopClickedTagResponse> getTopClickedTags(Integer storeId) {
         log.info("가장 많이 클릭된 상위 5개 태그 조회 시작");
 
-        List<Tag> topTags = tagRepositoryPort.findTopClickedTags();
+        List<Tag> topTags = tagRepositoryPort.findTopClickedTags(storeId);
 
         AtomicInteger rank = new AtomicInteger(1);
 
