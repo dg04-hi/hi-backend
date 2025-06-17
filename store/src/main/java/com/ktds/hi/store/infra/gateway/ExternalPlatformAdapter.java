@@ -67,27 +67,32 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
             return 0;
         }
     }
-
     @Override
     public int syncKakaoReviews(Long storeId, String externalStoreId) {
         log.info("카카오 리뷰 동기화 시작: storeId={}, externalStoreId={}", storeId, externalStoreId);
 
         try {
-            // 카카오 크롤링 서비스 호출
-            String url = String.format("%s/api/kakao/reviews?storeId=%s", kakaoCrawlerUrl, externalStoreId);
+            // 🔥 기존 URL 설정 활용하되 /analyze 엔드포인트로 변경
+            String url = "http://kakao-review-api-service/analyze";
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("store_id", externalStoreId);
+            requestBody.put("days_limit", 360);
+            requestBody.put("max_time", 300);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<String> response = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, String.class);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            return processKakaoResponse(storeId, "KAKAO", response.getBody());
+            // 🔥 기존 restTemplate 사용
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+            // 🔥 기존 parseAndStoreToRedis 메서드 활용
+            return parseAndStoreToRedis(storeId, "KAKAO", response.getBody());
 
         } catch (Exception e) {
-            log.error("카카오 리뷰 동기화 실패: storeId={}, externalStoreId={}, error={}",
-                    storeId, externalStoreId, e.getMessage());
-            updateSyncStatus(storeId, "KAKAO", "FAILED", 0);
+            log.error("카카오 리뷰 동기화 실패: storeId={}, error={}", storeId, e.getMessage(), e);
             return 0;
         }
     }
@@ -139,6 +144,101 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
             return 0;
         }
     }
+
+
+    /**
+     * 카카오 응답 파싱 및 Redis 저장 (기존 메서드 수정)
+     */
+    private int parseAndStoreToRedis(Long storeId, String platform, String responseBody) {
+        try {
+            log.info("카카오 API 응답: {}", responseBody);
+
+            // JSON 파싱
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+
+            // 🔥 실제 카카오 크롤링 서비스 응답 구조에 맞게 수정
+            if (!rootNode.has("success") || !rootNode.get("success").asBoolean()) {
+                log.warn("카카오 API 응답 실패: {}", responseBody);
+                return 0;
+            }
+
+            JsonNode reviewsNode = rootNode.get("reviews");
+            if (reviewsNode == null || !reviewsNode.isArray()) {
+                log.warn("카카오 응답에 reviews 배열이 없음");
+                return 0;
+            }
+
+            // 🔥 리뷰 데이터 변환 (실제 응답 구조에 맞게)
+            List<Map<String, Object>> parsedReviews = new ArrayList<>();
+            for (JsonNode reviewNode : reviewsNode) {
+                Map<String, Object> review = new HashMap<>();
+
+                // 🔑 기본 리뷰 정보
+             //   review.put("reviewId", generateReviewId(reviewNode)); 에러가 뜨ㅃ니다
+                review.put("content", reviewNode.path("content").asText(""));
+                review.put("rating", reviewNode.path("rating").asDouble(0.0));
+                review.put("reviewerName", reviewNode.path("reviewer_name").asText(""));
+                review.put("createdAt", reviewNode.path("date").asText(""));
+                review.put("platform", platform);
+
+                // 🏷️ 카카오 특화 정보
+                review.put("reviewerLevel", reviewNode.path("reviewer_level").asText(""));
+                review.put("likes", reviewNode.path("likes").asInt(0));
+                review.put("photoCount", reviewNode.path("photo_count").asInt(0));
+                review.put("hasPhotos", reviewNode.path("has_photos").asBoolean(false));
+
+                // 📊 리뷰어 통계 (있는 경우만)
+                if (reviewNode.has("reviewer_stats")) {
+                    JsonNode stats = reviewNode.get("reviewer_stats");
+                    Map<String, Object> reviewerStats = new HashMap<>();
+                    reviewerStats.put("reviews", stats.path("reviews").asInt(0));
+                    reviewerStats.put("averageRating", stats.path("average_rating").asDouble(0.0));
+                    reviewerStats.put("followers", stats.path("followers").asInt(0));
+                    review.put("reviewerStats", reviewerStats);
+                }
+
+                // 🏆 배지 (있는 경우만)
+                if (reviewNode.has("badges") && reviewNode.get("badges").isArray()) {
+                    List<String> badges = new ArrayList<>();
+                    for (JsonNode badge : reviewNode.get("badges")) {
+                        badges.add(badge.asText());
+                    }
+                    review.put("badges", badges);
+                }
+
+                parsedReviews.add(review);
+            }
+
+            if (!parsedReviews.isEmpty()) {
+                // 🔥 기존 Redis 저장 로직 그대로 활용
+                String redisKey = String.format("external:reviews:pending:%d:%s:%d",
+                        storeId, platform, System.currentTimeMillis());
+
+                Map<String, Object> cacheData = new HashMap<>();
+                cacheData.put("storeId", storeId);
+                cacheData.put("platform", platform);
+                cacheData.put("reviews", parsedReviews);
+                cacheData.put("status", "PENDING");
+                cacheData.put("timestamp", System.currentTimeMillis());
+                cacheData.put("retryCount", 0);
+
+                redisTemplate.opsForValue().set(redisKey, cacheData, Duration.ofDays(1));
+
+                log.info("Redis에 리뷰 데이터 저장 완료: key={}, count={}", redisKey, parsedReviews.size());
+
+                // 🔥 기존 동기화 상태 업데이트 메서드 활용
+                updateSyncStatus(storeId, platform, "SUCCESS", parsedReviews.size());
+            }
+
+            return parsedReviews.size();
+
+        } catch (Exception e) {
+            log.error("카카오 응답 파싱 및 Redis 저장 실패: {}", e.getMessage());
+            updateSyncStatus(storeId, platform, "FAILED", 0);
+            return 0;
+        }
+    }
+
 
     // ===== 계정 연동 메서드들 =====
 
