@@ -96,6 +96,13 @@ public interface ExternalPlatformPort {
      * @return 연동 해제 성공 여부
      */
     boolean disconnectPlatform(Long storeId, String platform);
+    /**
+     * 연동된 플랫폼 목록 조회
+     *
+     * @param storeId 매장 ID
+     * @return 연동된 플랫폼 목록
+     */
+    List<String> getConnectedPlatforms(Long storeId);
 
     public List<Map<String, Object>> getTempReviews(Long storeId, String platform);
 }

@@ -33,7 +33,6 @@ import java.util.*;
 public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase {
 
     private final ExternalPlatformPort externalPlatformPort;
-    private final EventPort eventPort;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
