@@ -2,10 +2,12 @@ package com.ktds.hi.analytics.infra.controller;
 
 import com.ktds.hi.analytics.biz.usecase.in.AnalyticsUseCase;
 import com.ktds.hi.analytics.infra.dto.*;
+import com.ktds.hi.common.dto.ErrorResponse;
 import com.ktds.hi.common.dto.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,11 +150,14 @@ public class AnalyticsController {
     public ResponseEntity<SuccessResponse<Void>> generateActionPlans(
         @Parameter(description = "AI 피드백 ID", required = true)
         @PathVariable @NotNull Long feedbackId,
-        @RequestBody ActionPlanCreateRequest request) {
+        @RequestBody ActionPlanCreateRequest request,
+        HttpServletRequest httpRequest) {
 
-        log.info("실행계획 생성 요청: feedbackId={}", feedbackId);
 
-        log.info("실행계획 바디 데이터 => {}", request);
+        // validation 체크
+        if (request.getActionPlanSelect() == null || request.getActionPlanSelect().isEmpty()) {
+            throw new IllegalArgumentException("실행계획을 생성하려면 개선포인트를 선택해주세요.");
+        }
 
         List<String> actionPlans = analyticsUseCase.generateActionPlansFromFeedback(request,feedbackId);
 
