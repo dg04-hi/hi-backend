@@ -174,7 +174,7 @@ public class AIServiceAdapter implements AIServicePort {
             다음은 한 매장의 고객 리뷰들입니다. 이를 분석하여 다음 JSON 형식으로 답변해주세요:
             
             {
-              "summary": "전체적인 분석 요약 (2-3문장)",
+              "summary": "전체적인 분석 요약(2-3문장)",
               "positivePoints": ["긍정적 요소1", "긍정적 요소2", "긍정적 요소3"],
               "improvementPoints": ["개선점1", "개선점2", "개선점3"],
               "recommendations": ["추천사항1", "추천사항2", "추천사항3"],
@@ -190,6 +190,7 @@ public class AIServiceAdapter implements AIServicePort {
             2. 개선점은 부정적 피드백이나 불만사항
             3. 추천사항은 매장 운영에 도움이 될 구체적인 제안
             4. 신뢰도 점수는 0.0-1.0 사이의 값
+            5. summary에는 전체적인 리뷰 분석에 대한 요약이 잘 담기게 작성.
             """,
             reviewsText
         );
