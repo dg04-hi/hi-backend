@@ -63,4 +63,7 @@ public class StoreDetailResponse {
 
     @Schema(description = "AI 요약 정보")
     private String aiSummary;
+
+    @Schema(description = "매장 이미지")
+    private String imageUrl;
 }

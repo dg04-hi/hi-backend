@@ -115,7 +115,8 @@ public class StoreService implements StoreUseCase {
                 .rating(store.getRating())
                 .reviewCount(store.getReviewCount())
                 .status(store.getStatus())
-            .tags(tagNameList)
+                .imageUrl(store.getImageUrl())
+                .tags(tagNameList)
                 .build();
     }
 
