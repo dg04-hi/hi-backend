@@ -33,7 +33,7 @@ external-api:
     base-url: https://openapi.naver.com
   kakao:
     api-key: ${KAKAO_API_KEY:}
-    base-url: http://kakao-review-api-service
+    base-url: http://kakao-review-api-service.ai-review-ns.svc.cluster.local
   google:
     api-key: ${GOOGLE_API_KEY:}
     base-url: https://maps.googleapis.com

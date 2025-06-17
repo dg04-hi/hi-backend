@@ -231,7 +231,6 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
     private void publishSyncEvent(Long storeId, String platform, int syncedCount) {
         try {
-            // 기존 Event Hub 설정 그대로 유지 ⭐
             EventHubProducerClient producer = new EventHubClientBuilder()
                     .connectionString(System.getenv("EVENTHUB_CONNECTION_STRING"), "review-sync")
                     .buildProducerClient();

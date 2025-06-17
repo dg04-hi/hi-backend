@@ -72,8 +72,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
         log.info("카카오 리뷰 동기화 시작: storeId={}, externalStoreId={}", storeId, externalStoreId);
 
         try {
-            // 🔥 카카오 크롤링 서비스 실제 호출
-            String url = "http://kakao-review-api-service/analyze";
+            String url = "http://kakao-review-api-service.ai-review-ns.svc.cluster.local/analyze";
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("store_id", externalStoreId);
