@@ -1,5 +1,6 @@
 package com.ktds.hi.store.biz.usecase.in;
 
+import com.ktds.hi.store.infra.dto.response.AllTagResponse;
 import com.ktds.hi.store.infra.dto.response.TopClickedTagResponse;
 
 import java.util.List;
@@ -12,6 +13,13 @@ import java.util.List;
  * @version 1.0.0
  */
 public interface TagUseCase {
+
+    /**
+     * 모든 활성화된 태그 목록 조회
+     *
+     * @return 모든 태그 목록
+     */
+    List<AllTagResponse> getAllTags();
 
     /**
      * 가장 많이 클릭된 상위 5개 태그 조회
