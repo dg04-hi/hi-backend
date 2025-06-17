@@ -30,6 +30,11 @@ spring:
       max-file-size: ${MAX_FILE_SIZE:10MB}
       max-request-size: ${MAX_REQUEST_SIZE:50MB}
 
+  azure:
+    eventhub:
+      connection-string: ${AZURE_EVENTHUB_CONNECTION_STRING}
+      consumer-group: $Default
+
 file-storage:
   base-path: ${FILE_STORAGE_PATH:/var/hiorder/uploads}
   allowed-extensions: jpg,jpeg,png,gif,webp
