@@ -71,6 +71,8 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
             return 0;
         }
     }
+
+    //*****//
     @Override
     public int syncKakaoReviews(Long storeId, String externalStoreId) {
         log.info("카카오 리뷰 동기화 시작: storeId={}, externalStoreId={}", storeId, externalStoreId);

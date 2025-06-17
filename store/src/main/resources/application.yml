@@ -24,6 +24,7 @@ spring:
     eventhub:
       connection-string: ${AZURE_EVENTHUB_CONNECTION_STRING}
 
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
