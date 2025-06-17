@@ -151,11 +151,8 @@ public class AnalyticsController {
     public ResponseEntity<SuccessResponse<Void>> generateActionPlans(
         @Parameter(description = "AI 피드백 ID", required = true)
         @PathVariable @NotNull Long feedbackId,
-        @RequestBody ActionPlanCreateRequest request,
-        @AuthenticationPrincipal long id,
-        HttpServletRequest httpRequest) {
+        @RequestBody ActionPlanCreateRequest request) {
 
-        System.out.println("test => " + id);
 
         // validation 체크
         if (request.getActionPlanSelect() == null || request.getActionPlanSelect().isEmpty()) {
