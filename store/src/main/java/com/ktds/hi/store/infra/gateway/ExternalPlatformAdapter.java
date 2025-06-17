@@ -212,6 +212,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
             if (!parsedReviews.isEmpty()) {
                 // 🔥 Redis에 저장
+                log.info("Redis에 리뷰 데이터 저장 진행 중");
                 String redisKey = String.format("external:reviews:pending:%d:%s:%d",
                         storeId, platform, System.currentTimeMillis());
 
@@ -235,6 +236,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
         } catch (Exception e) {
             log.error("카카오 응답 파싱 및 Redis 저장 실패: storeId={}, error={}", storeId, e.getMessage());
+            e.printStackTrace();
             updateSyncStatus(storeId, platform, "FAILED", 0);
             return 0;
         }
