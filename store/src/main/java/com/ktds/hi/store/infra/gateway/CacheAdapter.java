@@ -42,6 +42,7 @@ public class CacheAdapter implements CachePort {
             log.debug("캐시 저장: key={}, ttl={}초", key, ttlSeconds);
         } catch (Exception e) {
             log.warn("캐시 저장 실패: key={}, error={}", key, e.getMessage());
+            e.printStackTrace();
         }
     }
 

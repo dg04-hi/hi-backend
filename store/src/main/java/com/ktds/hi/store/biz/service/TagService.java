@@ -29,10 +29,28 @@ public class TagService implements TagUseCase {
     private final TagRepositoryPort tagRepositoryPort;
 
     @Override
-    public List<TopClickedTagResponse> getTopClickedTags(Integer storeId) {
+    public List<AllTagResponse> getAllTags() {
+        log.info("모든 활성화된 태그 목록 조회 시작");
+
+        List<Tag> tags = tagRepositoryPort.findAllActiveTags();
+
+        List<AllTagResponse> responses = tags.stream()
+            .map(tag -> AllTagResponse.builder()
+                .id(tag.getId())
+                .tagCategory(tag.getTagCategory().name())
+                .tagName(tag.getTagName())
+                .build())
+            .collect(Collectors.toList());
+
+        log.info("모든 활성화된 태그 목록 조회 완료: count={}", responses.size());
+        return responses;
+    }
+
+    @Override
+    public List<TopClickedTagResponse> getTopClickedTags() {
         log.info("가장 많이 클릭된 상위 5개 태그 조회 시작");
 
-        List<Tag> topTags = tagRepositoryPort.findTopClickedTags(storeId);
+        List<Tag> topTags = tagRepositoryPort.findTopClickedTags();
 
         AtomicInteger rank = new AtomicInteger(1);
 

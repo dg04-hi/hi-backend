@@ -1,6 +1,7 @@
 package com.ktds.hi.store.infra.controller;
 
 import com.ktds.hi.store.biz.usecase.in.TagUseCase;
+import com.ktds.hi.store.infra.dto.response.AllTagResponse;
 import com.ktds.hi.store.infra.dto.response.TopClickedTagResponse;
 import com.ktds.hi.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +26,18 @@ import java.util.List;
 public class TagController {
 
     private final TagUseCase tagUseCase;
+
+    /**
+     * 모든 활성화된 태그 목록 조회 API
+     */
+    @GetMapping
+    @Operation(summary = "모든 태그 조회", description = "활성화된 모든 태그 목록을 조회합니다.")
+    public ResponseEntity<ApiResponse<List<AllTagResponse>>> getAllTags() {
+
+        List<AllTagResponse> tags = tagUseCase.getAllTags();
+
+        return ResponseEntity.ok(ApiResponse.success(tags));
+    }
 
     /**
      * 가장 많이 클릭된 상위 5개 태그 조회 API
