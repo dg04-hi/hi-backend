@@ -116,6 +116,14 @@ public class OrderDataAdapter implements OrderDataPort {
         // 연령대별 분포 계산
         Map<String, Integer> ageDistribution = calculateCustomerAgeDistribution(orders);
 
+        //메뉴명 매핑
+        Map<Long, String> menuIdToName = orders.stream()
+            .collect(Collectors.toMap(
+                OrderResponse::getMenuId,
+                OrderResponse::getMenuName,
+                (existing, replacement) -> existing // 중복시 기존값 유지
+            ));
+
         // 인기 메뉴 계산 (메뉴ID별 주문 횟수) - 실제로는 메뉴명을 가져와야 하지만 임시로 메뉴ID 사용
         List<String> popularMenus = orders.stream()
             .collect(Collectors.groupingBy(
@@ -125,7 +133,7 @@ public class OrderDataAdapter implements OrderDataPort {
             .entrySet().stream()
             .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
             .limit(4)
-            .map(entry -> "메뉴" + entry.getKey()) // 실제로는 메뉴명으로 변환 필요
+            .map(entry -> menuIdToName.get(entry.getKey())) // 실제로는 메뉴명으로 변환 필요
             .collect(Collectors.toList());
 
         return OrderStatistics.builder()
