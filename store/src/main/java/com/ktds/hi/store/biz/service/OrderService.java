@@ -78,6 +78,7 @@ public class OrderService implements OrderUseCase {
                 .id(order.getId())
                 .storeId(order.getStoreId())
                 .menuId(order.getMenuId())
+                .menuName(order.getMenuName())
                 .customerAge(order.getCustomerAge())
                 .customerGender(order.getCustomerGender())
                 .orderAmount(order.getOrderAmount())
