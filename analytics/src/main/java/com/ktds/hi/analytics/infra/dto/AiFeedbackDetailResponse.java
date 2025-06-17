@@ -23,6 +23,7 @@ public class AiFeedbackDetailResponse {
     private Long storeId;
     private String summary;
     private List<String> positivePoints;
+    private List<String> negativePoints;
     private List<String> improvementPoints;
     private List<String> existActionPlan; // improvemnetPoints 중에서 처리 된것.
     private List<String> recommendations;

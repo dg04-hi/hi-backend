@@ -176,6 +176,7 @@ public class AIServiceAdapter implements AIServicePort {
             {
               "summary": "전체적인 분석 요약(2-3문장)",
               "positivePoints": ["긍정적 요소1", "긍정적 요소2", "긍정적 요소3"],
+              "negativePoints": ["부정적 요소1", "부정적 요소2", "부정적 요소3"],
               "improvementPoints": ["개선점1", "개선점2", "개선점3"],
               "recommendations": ["추천사항1", "추천사항2", "추천사항3"],
               "sentimentAnalysis": "전체적인 감정 분석 결과",
@@ -187,6 +188,7 @@ public class AIServiceAdapter implements AIServicePort {
             
             분석 시 다음 사항을 고려해주세요:
             1. 긍정적 요소는 고객들이 자주 언급하는 좋은 점들
+            2. 부정적 요소는 고객들이 자주 언급하는 안좋은 점들(없는 경우에는 없음으로 표시)
             2. 개선점은 부정적 피드백이나 불만사항
             3. 추천사항은 매장 운영에 도움이 될 구체적인 제안
             4. 신뢰도 점수는 0.0-1.0 사이의 값
@@ -278,6 +280,7 @@ public class AIServiceAdapter implements AIServicePort {
             return AiFeedback.builder()
                 .summary((String) result.get("summary"))
                 .positivePoints((List<String>) result.get("positivePoints"))
+                .negativePoints((List<String>) result.get("negativePoints"))
                 .improvementPoints((List<String>) result.get("improvementPoints"))
                 .recommendations((List<String>) result.get("recommendations"))
                 .sentimentAnalysis((String) result.get("sentimentAnalysis"))

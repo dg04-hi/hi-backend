@@ -42,7 +42,10 @@ public class AiFeedbackEntity {
     
     @Column(name = "positive_points", columnDefinition = "TEXT")
     private String positivePointsJson;
-    
+
+    @Column(name = "negative_points", columnDefinition = "TEXT")
+    private String negativePointsJson;
+
     @Column(name = "improvement_points", columnDefinition = "TEXT")
     private String improvementPointsJson;
     

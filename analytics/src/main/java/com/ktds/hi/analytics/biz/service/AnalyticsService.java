@@ -123,6 +123,7 @@ public class AnalyticsService implements AnalyticsUseCase {
                     .storeId(storeId)
                     .summary(aiFeedback.get().getSummary())
                     .positivePoints(aiFeedback.get().getPositivePoints())
+                    .negativePoints(aiFeedback.get().getNegativePoints())
                     .improvementPoints(aiFeedback.get().getImprovementPoints())
                     .recommendations(aiFeedback.get().getRecommendations())
                     .sentimentAnalysis(aiFeedback.get().getSentimentAnalysis())
@@ -460,6 +461,7 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .feedbackId(aiFeedback.getId())
                 .summary(aiFeedback.getSummary())
                 .positivePoints(aiFeedback.getPositivePoints())
+                .negativePoints(aiFeedback.getNegativePoints())
                 .improvementPoints(aiFeedback.getImprovementPoints())
                 .recommendations(aiFeedback.getRecommendations())
                 .sentimentAnalysis(aiFeedback.getSentimentAnalysis())
@@ -530,11 +532,13 @@ public class AnalyticsService implements AnalyticsUseCase {
             // 2. 실제 AI 서비스 호출 (기존 하드코딩 부분을 수정)
             AiFeedback aiFeedback = aiServicePort.generateFeedback(reviewData);
 
+
             // 3. 도메인 객체 속성 설정
             AiFeedback completeAiFeedback = AiFeedback.builder()
                 .storeId(storeId)
                 .summary(aiFeedback.getSummary())
                 .positivePoints(aiFeedback.getPositivePoints())
+                .negativePoints(aiFeedback.getNegativePoints())
                 .improvementPoints(aiFeedback.getImprovementPoints())
                 .recommendations(aiFeedback.getRecommendations())
                 .sentimentAnalysis(aiFeedback.getSentimentAnalysis())

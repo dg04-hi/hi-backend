@@ -31,6 +31,9 @@ public class AiAnalysisResponse {
 	@Schema(description = "긍정적 요소")
 	private List<String> positivePoints;
 
+	@Schema(description = "부정적 요소")
+	private List<String> negativePoints;
+
 	@Schema(description = "개선점")
 	private List<String> improvementPoints;
 
