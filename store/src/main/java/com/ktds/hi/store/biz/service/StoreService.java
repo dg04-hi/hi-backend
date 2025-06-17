@@ -4,6 +4,7 @@ package com.ktds.hi.store.biz.service;
 import com.ktds.hi.store.biz.usecase.in.StoreUseCase;
 import com.ktds.hi.store.infra.dto.*;
 import com.ktds.hi.store.infra.gateway.entity.StoreEntity;
+import com.ktds.hi.store.infra.gateway.entity.TagEntity;
 import com.ktds.hi.store.infra.gateway.repository.StoreJpaRepository;
 import com.ktds.hi.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -93,10 +94,13 @@ public class StoreService implements StoreUseCase {
 
     @Override
     public StoreDetailResponse getStoreDetail(Long storeId) {
-        log.info("매장 상세 조회: storeId={}", storeId);
 
         StoreEntity store = storeJpaRepository.findById(storeId)
                 .orElseThrow(() -> new BusinessException("STORE_NOT_FOUND", "매장을 찾을 수 없습니다."));
+
+        List<String> tagNameList = store.getTags().stream()
+            .map(TagEntity::getTagName)
+            .toList();
 
         return StoreDetailResponse.builder()
                 .storeId(store.getId())
@@ -111,6 +115,7 @@ public class StoreService implements StoreUseCase {
                 .rating(store.getRating())
                 .reviewCount(store.getReviewCount())
                 .status(store.getStatus())
+            .tags(tagNameList)
                 .build();
     }
 
