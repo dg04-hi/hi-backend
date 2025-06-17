@@ -444,9 +444,10 @@ public class AnalyticsService implements AnalyticsUseCase {
 
             // 2. 실행계획 생성 (요청 시)
             List<String> actionPlans = null;
-            if (Boolean.TRUE.equals(request.getGenerateActionPlan())) {
-                actionPlans = aiServicePort.generateActionPlan(aiFeedback);
-            }
+            //TODO : 추후에 AI 분석후에 바로 실행계획까지 생성해야 한다면 추가.
+            // if (Boolean.TRUE.equals(request.getGenerateActionPlan())) {
+            //     actionPlans = aiServicePort.generateActionPlan(aiFeedback);
+            // }
 
             // 3. 응답 생성
             AiAnalysisResponse response = AiAnalysisResponse.builder()
@@ -459,7 +460,7 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .sentimentAnalysis(aiFeedback.getSentimentAnalysis())
                 .confidenceScore(aiFeedback.getConfidenceScore())
                 .totalReviewsAnalyzed(getTotalReviewsCount(storeId, request.getDays()))
-                .actionPlans(actionPlans)
+                .actionPlans(actionPlans) //TODO : 사용하는 값은 아니지만 의존성을 위해 그대로 둠, 추후에 변경 필요.
                 .analyzedAt(aiFeedback.getGeneratedAt())
                 .build();
 
@@ -474,7 +475,7 @@ public class AnalyticsService implements AnalyticsUseCase {
 
     @Override
     @Transactional
-    public List<String> generateActionPlansFromFeedback(Long feedbackId) {
+    public List<String> generateActionPlansFromFeedback(ActionPlanCreateRequest request, Long feedbackId) {
         log.info("실행계획 생성: feedbackId={}", feedbackId);
 
         try {
@@ -487,7 +488,7 @@ public class AnalyticsService implements AnalyticsUseCase {
 
             AiFeedback feedback = aiFeedback.get();
             // 2. 기존 AIServicePort.generateActionPlan 메서드 활용
-            List<String> actionPlans = aiServicePort.generateActionPlan(aiFeedback.get());
+            List<String> actionPlans = aiServicePort.generateActionPlan(request.getActionPlanSelect(), aiFeedback.get());
 
 
             // 3. DB에 실행계획 저장
@@ -593,7 +594,8 @@ public class AnalyticsService implements AnalyticsUseCase {
             // ActionPlan 도메인 객체 생성 (기존 ActionPlanService의 패턴과 동일하게)
             ActionPlan actionPlan = ActionPlan.builder()
                 .storeId(feedback.getStoreId())
-                .userId(1L) // AI가 생성한 계획이므로 userId는 null
+                .userId(0L) // AI가 생성한 계획이므로 userId는 0
+                .feedbackId(feedback.getId())
                 .title("AI 추천 실행계획 " + (i + 1))
                 .description(planContent)
                 .period("1개월") // 기본 실행 기간

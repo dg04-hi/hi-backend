@@ -21,6 +21,7 @@ public class ActionPlan {
     private Long id;
     private Long storeId;
     private Long userId;
+    private Long feedbackId;
     private String title;
     private String description;
     private String period;

@@ -125,25 +125,30 @@ public class AIServiceAdapter implements AIServicePort {
     }
     
     @Override
-    public List<String> generateActionPlan(AiFeedback feedback) {
+    public List<String> generateActionPlan(List<String> actionPlanSelect, AiFeedback feedback) {
         log.info("OpenAI 실행 계획 생성 시작");
-
         try {
+
+            StringBuffer planFormat = new StringBuffer();
+            for(int i = 1; i <= actionPlanSelect.size(); i++) {
+                planFormat.append(i).append(" [구체적인 실행 계획 ").append(i).append("]\n");
+            }
             String prompt = String.format(
                 """
-                다음 AI 피드백을 바탕으로 구체적인 실행 계획 3개를 생성해주세요.
+                다음 AI 피드백을 바탕으로 구체적인 실행 계획 %s개를 생성해주세요.
                 각 계획은 실행 가능하고 구체적이어야 합니다.
                 
                 요약: %s
                 개선점: %s
                 
+                실행계획 내용은 점주가 반영할 수 있도록 구체적어야 합니다.
                 실행 계획을 다음 형식으로 작성해주세요:
-                1. [구체적인 실행 계획 1]
-                2. [구체적인 실행 계획 2]
-                3. [구체적인 실행 계획 3]
+                %s
                 """,
+                actionPlanSelect.size(),
                 feedback.getSummary(),
-                String.join(", ", feedback.getImprovementPoints())
+                String.join(", ", actionPlanSelect),
+                planFormat
             );
 
             String result = callOpenAI(prompt);
@@ -151,10 +156,9 @@ public class AIServiceAdapter implements AIServicePort {
 
         } catch (Exception e) {
             log.error("OpenAI 실행 계획 생성 중 오류 발생", e);
+            //TODO : 시연을 위해서 우선은 아래과 같이 처리, 추후에는 실행계획이 실패했다면 Runtime계열의 예외를 던지는게 좋을듯.
             return Arrays.asList(
-                "서비스 품질 개선을 위한 직원 교육 실시",
-                "고객 피드백 수집 체계 구축",
-                "매장 운영 프로세스 개선"
+                "실행계획 생성 실패. 재생성 필요"
             );
         }
     }

@@ -79,6 +79,7 @@ public class ActionPlanRepositoryAdapter implements ActionPlanPort {
     private ActionPlanEntity toEntity(ActionPlan domain) {
         return ActionPlanEntity.builder()
                 .id(domain.getId())
+                .feedbackId(domain.getFeedbackId())
                 .storeId(domain.getStoreId())
                 .userId(domain.getUserId())
                 .title(domain.getTitle())

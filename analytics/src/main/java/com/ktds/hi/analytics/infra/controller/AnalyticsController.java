@@ -154,10 +154,8 @@ public class AnalyticsController {
 
         log.info("실행계획 바디 데이터 => {}", request);
 
+        List<String> actionPlans = analyticsUseCase.generateActionPlansFromFeedback(request,feedbackId);
+
         return ResponseEntity.ok(SuccessResponse.of("실행계획 생성 완료"));
-
-        // List<String> actionPlans = analyticsUseCase.generateActionPlansFromFeedback(feedbackId);
-
-        // return ResponseEntity.ok(SuccessResponse.of(actionPlans, "실행계획 생성 완료"));
     }
 }
