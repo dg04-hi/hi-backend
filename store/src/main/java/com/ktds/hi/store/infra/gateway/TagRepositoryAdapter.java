@@ -57,10 +57,10 @@ public class TagRepositoryAdapter implements TagRepositoryPort {
     }
 
     @Override
-    public List<Tag> findTopClickedTags() {
+    public List<Tag> findTopClickedTags(Integer storeId) {
         log.info("가장 많이 클릭된 상위 5개 태그 조회");
 
-        List<TagEntity> entities = tagJpaRepository.findTop5ByOrderByClickCountDesc(
+        List<TagEntity> entities = tagJpaRepository.findTop5ByOrderByClickCountDesc(storeId,
                 PageRequest.of(0, 5)
         );
 

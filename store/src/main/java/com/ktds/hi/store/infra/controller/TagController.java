@@ -29,11 +29,11 @@ public class TagController {
     /**
      * 가장 많이 클릭된 상위 5개 태그 조회 API
      */
-    @GetMapping("/top-clicked")
+    @GetMapping("/top-clicked/{storeId}")
     @Operation(summary = "인기 태그 조회", description = "가장 많이 클릭된 상위 5개 태그를 조회합니다.")
-    public ResponseEntity<ApiResponse<List<TopClickedTagResponse>>> getTopClickedTags() {
+    public ResponseEntity<ApiResponse<List<TopClickedTagResponse>>> getTopClickedTags(Integer storeId) {
 
-        List<TopClickedTagResponse> topTags = tagUseCase.getTopClickedTags();
+        List<TopClickedTagResponse> topTags = tagUseCase.getTopClickedTags(storeId);
 
         return ResponseEntity.ok(ApiResponse.success(topTags));
     }

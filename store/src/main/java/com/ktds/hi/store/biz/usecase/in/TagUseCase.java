@@ -16,7 +16,7 @@ public interface TagUseCase {
     /**
      * 가장 많이 클릭된 상위 5개 태그 조회
      */
-    List<TopClickedTagResponse> getTopClickedTags();
+    List<TopClickedTagResponse> getTopClickedTags(Integer storeId);
 
     /**
      * 태그 클릭 이벤트 처리

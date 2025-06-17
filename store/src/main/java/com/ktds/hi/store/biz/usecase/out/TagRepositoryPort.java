@@ -33,7 +33,7 @@ public interface TagRepositoryPort {
     /**
      * 가장 많이 클릭된 상위 5개 태그 조회
      */
-    List<Tag> findTopClickedTags();
+    List<Tag> findTopClickedTags(Integer storeId);
 
     /**
      * 태그 클릭 수 증가

@@ -4,6 +4,7 @@ import com.ktds.hi.store.domain.TagCategory;
 import com.ktds.hi.store.infra.gateway.entity.TagEntity;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -55,6 +56,6 @@ public interface TagJpaRepository extends JpaRepository<TagEntity, Long> {
     /**
      * 클릭 수 기준 상위 5개 태그 조회
      */
-    @Query("SELECT t FROM TagEntity t WHERE t.isActive = true ORDER BY t.clickCount DESC")
-    List<TagEntity> findTop5ByOrderByClickCountDesc(PageRequest pageRequest);
+    @Query("SELECT t FROM TagEntity t JOIN t.stores s WHERE s.id = :storeId AND t.isActive = true ORDER BY t.clickCount DESC")
+    List<TagEntity> findTop5ByStoreIdOrderByClickCountDesc(@Param("storeId") Long storeId, Pageable pageable);    List<TagEntity> findTop5ByOrderByClickCountDesc(Integer storeId, PageRequest pageRequest);
 }
