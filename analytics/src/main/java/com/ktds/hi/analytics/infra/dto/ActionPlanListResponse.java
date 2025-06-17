@@ -20,6 +20,7 @@ public class ActionPlanListResponse {
     private Long id;
     private String title;
     private PlanStatus status;
+    private String description;
     private String period;
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
