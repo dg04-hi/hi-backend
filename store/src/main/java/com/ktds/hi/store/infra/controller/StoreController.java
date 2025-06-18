@@ -1,11 +1,14 @@
 // store/src/main/java/com/ktds/hi/store/infra/controller/StoreController.java
 package com.ktds.hi.store.infra.controller;
 
+import com.ktds.hi.store.biz.service.StoreService;
 import com.ktds.hi.store.biz.usecase.in.MenuUseCase;
 import com.ktds.hi.store.biz.usecase.in.StoreUseCase;
+import com.ktds.hi.store.domain.Store;
 import com.ktds.hi.store.infra.dto.*;
 import com.ktds.hi.common.dto.ApiResponse;
 import com.ktds.hi.common.security.JwtTokenProvider;
+import com.ktds.hi.store.infra.dto.response.StoreListResponse;
 import com.ktds.hi.store.infra.dto.response.StoreMenuListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,6 +41,7 @@ import java.util.List;
 public class StoreController {
 
     private final StoreUseCase storeUseCase;
+    private final StoreService storeService;
     private final JwtTokenProvider jwtTokenProvider;
     private final MenuUseCase menuUseCase;
 
@@ -66,6 +70,14 @@ public class StoreController {
         List<MyStoreListResponse> responses = storeUseCase.getMyStores(ownerId);
 
         return ResponseEntity.ok(ApiResponse.success(responses, "내 매장 목록 조회 완료"));
+    }
+
+    @GetMapping("/stores/all")
+    @Operation(summary = "매장 전체 리스트")
+    public ResponseEntity<ApiResponse<List<StoreListResponse>>> getAllStores() {
+
+        List<StoreListResponse> responses = storeUseCase.getAllStores();
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @Operation(summary = "매장 상세 조회", description = "매장의 상세 정보를 조회합니다.")
@@ -130,6 +142,8 @@ public class StoreController {
         List<StoreMenuListResponse> response = menuUseCase.getStoreMenus(storeId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+
 
 
 

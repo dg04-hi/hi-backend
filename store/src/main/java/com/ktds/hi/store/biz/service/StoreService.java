@@ -3,6 +3,7 @@ package com.ktds.hi.store.biz.service;
 
 import com.ktds.hi.store.biz.usecase.in.StoreUseCase;
 import com.ktds.hi.store.infra.dto.*;
+import com.ktds.hi.store.infra.dto.response.StoreListResponse;
 import com.ktds.hi.store.infra.gateway.entity.StoreEntity;
 import com.ktds.hi.store.infra.gateway.entity.TagEntity;
 import com.ktds.hi.store.infra.gateway.repository.StoreJpaRepository;
@@ -93,6 +94,27 @@ public class StoreService implements StoreUseCase {
                 .collect(Collectors.toList());
     }
 
+
+    @Override
+    public List<StoreListResponse> getAllStores() {
+
+        List<StoreEntity> stores = storeJpaRepository.findAll();
+
+        return stores.stream()
+                .map(store -> StoreListResponse.builder()
+                        .storeId(store.getId())
+                        .storeName(store.getStoreName())
+                        .address(store.getAddress())
+                        .category(store.getCategory())
+                        .rating(store.getRating())
+                        .reviewCount(store.getReviewCount())
+                        .status("운영중")
+                        .imageUrl(store.getImageUrl())
+                        .operatingHours(store.getOperatingHours())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     @Override
     public StoreDetailResponse getStoreDetail(Long storeId) {
 
@@ -156,6 +178,10 @@ public class StoreService implements StoreUseCase {
                 .message("매장이 삭제되었습니다.")
                 .build();
     }
+
+
+
+
 
     @Override
     public List<StoreSearchResponse> searchStores(String keyword, String category, String tags,
