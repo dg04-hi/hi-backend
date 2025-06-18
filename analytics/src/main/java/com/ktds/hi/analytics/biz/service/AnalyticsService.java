@@ -537,6 +537,7 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .recommendations(aiFeedback.getRecommendations())
                 .sentimentAnalysis(aiFeedback.getSentimentAnalysis())
                 .confidenceScore(aiFeedback.getConfidenceScore())
+                .positiveSummary(aiFeedback.getPositiveSummary())
                 .totalReviewsAnalyzed(getTotalReviewsCount(storeId, request.getDays()))
                 .actionPlans(actionPlans) //TODO : 사용하는 값은 아니지만 의존성을 위해 그대로 둠, 추후에 변경 필요.
                 .analyzedAt(aiFeedback.getGeneratedAt())
@@ -581,6 +582,11 @@ public class AnalyticsService implements AnalyticsUseCase {
         }
     }
 
+    @Override
+    public CustomerPositiveReviewResponse getCustomerPositiveReview(Long storeId) {
+        return null;
+    }
+
     /**
      * 실제 AI를 호출하는 개선된 피드백 생성 메서드
      * 기존 generateAIFeedback()의 하드코딩 부분을 실제 AI 호출로 수정
@@ -613,6 +619,7 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .recommendations(aiFeedback.getRecommendations())
                 .sentimentAnalysis(aiFeedback.getSentimentAnalysis())
                 .confidenceScore(aiFeedback.getConfidenceScore())
+                .positiveSummary(aiFeedback.getPositiveSummary())
                 .generatedAt(LocalDateTime.now())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())

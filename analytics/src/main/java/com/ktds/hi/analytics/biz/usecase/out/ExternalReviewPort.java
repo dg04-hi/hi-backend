@@ -18,6 +18,14 @@ public interface ExternalReviewPort {
      */
     List<String> getRecentReviews(Long storeId, Integer days);
 
+    // 🔥 긍정적인 리뷰만 조회하는 메서드 추가
+    /**
+     * 긍정적인 리뷰만 조회 (평점 4점 이상)
+     * @param storeId 매장 ID
+     * @param days 조회 기간 (일)
+     * @return 긍정적인 리뷰 목록
+     */
+    List<String> getPositiveReviews(Long storeId, Integer days);
     
     /**
      * 리뷰 개수 조회

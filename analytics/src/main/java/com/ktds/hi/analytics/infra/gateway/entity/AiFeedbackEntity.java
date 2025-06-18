@@ -57,6 +57,10 @@ public class AiFeedbackEntity {
     
     @Column(name = "confidence_score")
     private Double confidenceScore;
+
+    // 🔥 고객용 긍정 리뷰 요약 컬럼 추가
+    @Column(name = "customer_positive_summary", columnDefinition = "TEXT")
+    private String positiveSummary;
     
     @Column(name = "generated_at")
     private LocalDateTime generatedAt;

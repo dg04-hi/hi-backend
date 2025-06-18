@@ -35,4 +35,12 @@ public interface AIServicePort {
      * 실행 계획 생성
      */
     List<String> generateActionPlan(List<String> actionPlanSelect, AiFeedback feedback);
+
+    // 🔥 고객용 긍정 리뷰 요약 생성 메서드 추가
+    /**
+     * 긍정적인 리뷰만을 분석하여 고객용 요약 생성
+     * @param positiveReviews 긍정적인 리뷰 목록
+     * @return 고객에게 보여줄 긍정적인 요약
+     */
+    String generateCustomerPositiveSummary(List<String> positiveReviews);
 }

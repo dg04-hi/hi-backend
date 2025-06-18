@@ -29,6 +29,9 @@ public class AiFeedback {
     private List<String> recommendations;
     private String sentimentAnalysis;
     private Double confidenceScore;
+
+    private String positiveSummary;
+
     private LocalDateTime generatedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
