@@ -24,6 +24,7 @@ public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
     @Query("SELECT s FROM StoreEntity s WHERE s.status = 'ACTIVE' ORDER BY s.rating DESC")
     Page<StoreEntity> findAllByOrderByRatingDesc(Pageable pageable);
 
+
     /**
      * 점주 ID로 매장 목록 조회
      */

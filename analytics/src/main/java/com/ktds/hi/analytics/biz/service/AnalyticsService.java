@@ -4,6 +4,7 @@ import com.ktds.hi.analytics.biz.domain.ActionPlan;
 import com.ktds.hi.analytics.biz.domain.Analytics;
 import com.ktds.hi.analytics.biz.domain.AiFeedback;
 import com.ktds.hi.analytics.biz.domain.PlanStatus;
+import com.ktds.hi.analytics.biz.domain.SentimentType;
 import com.ktds.hi.analytics.biz.usecase.in.AnalyticsUseCase;
 import com.ktds.hi.analytics.biz.usecase.out.*;
 import com.ktds.hi.analytics.infra.dto.*;
@@ -13,10 +14,14 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 분석 서비스 구현 클래스 (수정버전)
@@ -35,6 +40,7 @@ public class AnalyticsService implements AnalyticsUseCase {
     private final CachePort cachePort;
     private final EventPort eventPort;
     private final ActionPlanPort actionPlanPort; // 추가된 의존성
+
     
     @Override
     // @Cacheable(value = "storeAnalytics", key = "#storeId")
@@ -270,8 +276,10 @@ public class AnalyticsService implements AnalyticsUseCase {
                     .totalReviews(0)
                     .positiveReviewCount(0)
                     .negativeReviewCount(0)
+                    .neutralReviewCount(0)
                     .positiveRate(0.0)
                     .negativeRate(0.0)
+                    .neutralRate(0.0)
                     .analysisDate(LocalDate.now())
                     .build();
 
@@ -280,8 +288,10 @@ public class AnalyticsService implements AnalyticsUseCase {
             }
 
             // 3. 응답 생성
-            int positiveCount = countPositiveReviews(recentReviews);
-            int negativeCount = countNegativeReviews(recentReviews);
+            ReviewSentimentCount sentimentCount = analyzeReviewSentiments(recentReviews);
+            int positiveCount = sentimentCount.getPositiveCount();
+            int negativeCount = sentimentCount.getNegativeCount();
+            int neutralCount = sentimentCount.getNeutralCount();
             int totalCount = recentReviews.size();
 
             ReviewAnalysisResponse response = ReviewAnalysisResponse.builder()
@@ -289,8 +299,10 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .totalReviews(totalCount)
                 .positiveReviewCount(positiveCount)
                 .negativeReviewCount(negativeCount)
-                .positiveRate(Math.floor((double) positiveCount / totalCount * 100) / 10.0)
-                .negativeRate(Math.floor((double) negativeCount / totalCount * 100) / 10.0)
+                .neutralReviewCount(neutralCount)
+                .positiveRate(Math.floor((double) positiveCount / totalCount * 1000) / 10.0)
+                .negativeRate(Math.floor((double) negativeCount / totalCount * 1000) / 10.0)
+                .neutralRate(Math.floor((double) neutralCount / totalCount * 1000) / 10.0)
                 .analysisDate(LocalDate.now())
                 .build();
 
@@ -305,7 +317,75 @@ public class AnalyticsService implements AnalyticsUseCase {
             throw new RuntimeException("리뷰 분석에 실패했습니다.", e);
         }
     }
-    
+
+    /**
+     * 기존 analyzeReviewSentiments 메서드를 대량 분석 방식으로 개선
+     * 개별 AI 호출 대신 한 번의 호출로 모든 리뷰 분석
+     */
+    private ReviewSentimentCount analyzeReviewSentiments(List<String> reviews) {
+        log.info("LLM 기반 리뷰 감정 분석 시작: 총 리뷰 수={}", reviews.size());
+
+        try {
+            if (reviews.isEmpty()) {
+                return new ReviewSentimentCount(0, 0, 0);
+            }
+
+            // 유효한 리뷰만 필터링
+            List<String> validReviews = reviews.stream()
+                .filter(review -> review != null && !review.trim().isEmpty())
+                .collect(Collectors.toList());
+
+            if (validReviews.isEmpty()) {
+                return new ReviewSentimentCount(0, 0, 0);
+            }
+
+            // 기존 개별 분석 대신 대량 분석 사용
+            Map<SentimentType, Integer> sentimentCounts = aiServicePort.analyzeBulkSentiments(validReviews);
+
+            int positiveCount = sentimentCounts.get(SentimentType.POSITIVE);
+            int negativeCount = sentimentCounts.get(SentimentType.NEGATIVE);
+            int neutralCount = sentimentCounts.get(SentimentType.NEUTRAL);
+
+            ReviewSentimentCount result = new ReviewSentimentCount(positiveCount, negativeCount, neutralCount);
+
+            log.info("리뷰 감정 분석 완료: 긍정={}, 부정={}, 중립={}, 전체={}",
+                positiveCount, negativeCount, neutralCount, validReviews.size());
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("리뷰 감정 분석 중 전체 오류 발생, fallback 사용", e);
+            // 오류 시 기존 가정값 사용
+            int total = reviews.size();
+            return new ReviewSentimentCount(
+                (int) (total * 0.6), // 60% 긍정
+                (int) (total * 0.2), // 20% 부정
+                total - (int) (total * 0.6) - (int) (total * 0.2) // 나머지 중립
+            );
+        }
+    }
+
+    /**
+     * 리뷰 감정 분석 결과를 담는 내부 클래스
+     */
+    public static class ReviewSentimentCount {
+        private final int positiveCount;
+        private final int negativeCount;
+        private final int neutralCount;
+
+        public ReviewSentimentCount(int positiveCount, int negativeCount, int neutralCount) {
+            this.positiveCount = positiveCount;
+            this.negativeCount = negativeCount;
+            this.neutralCount = neutralCount;
+        }
+
+        public int getPositiveCount() { return positiveCount; }
+        public int getNegativeCount() { return negativeCount; }
+        public int getNeutralCount() { return neutralCount; }
+        public int getTotalCount() { return positiveCount + negativeCount + neutralCount; }
+    }
+
+
     // private 메서드들
     @Transactional
     public Analytics generateNewAnalytics(Long storeId) {
@@ -429,15 +509,6 @@ public class AnalyticsService implements AnalyticsUseCase {
         return "추천사항이 없습니다.";
     }
 
-    private int countPositiveReviews(List<String> reviews) {
-        // 실제로는 AI 서비스를 통한 감정 분석 필요
-        return (int) (reviews.size() * 0.6); // 60% 가정
-    }
-
-    private int countNegativeReviews(List<String> reviews) {
-        // 실제로는 AI 서비스를 통한 감정 분석 필요
-        return (int) (reviews.size() * 0.2); // 20% 가정
-    }
 
     @Override
     @Transactional

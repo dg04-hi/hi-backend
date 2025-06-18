@@ -1,6 +1,7 @@
 package com.ktds.hi.store.biz.usecase.in;
 
 import com.ktds.hi.store.infra.dto.*;
+import com.ktds.hi.store.infra.dto.response.StoreListResponse;
 
 import java.util.List;
 
@@ -29,6 +30,8 @@ public interface StoreUseCase {
      * @return 내 매장 목록
      */
     List<MyStoreListResponse> getMyStores(Long ownerId);
+
+    List<StoreListResponse> getAllStores();
 
     /**
      * 매장 상세 조회
@@ -73,4 +76,6 @@ public interface StoreUseCase {
     List<StoreSearchResponse> searchStores(String keyword, String category, String tags,
                                            Double latitude, Double longitude, Integer radius,
                                            Integer page, Integer size);
+
+
 }

@@ -43,7 +43,7 @@ public class EventHubAdapter {
     private final ExecutorService executorService = Executors.newFixedThreadPool(3);
     private volatile boolean isRunning = false;
     
-    @PostConstruct
+    // @PostConstruct
     public void startEventListening() {
         log.info("Event Hub 리스너 시작");
         isRunning = true;
@@ -52,7 +52,7 @@ public class EventHubAdapter {
         executorService.submit(this::listenToReviewEvents);
     }
     
-    @PreDestroy
+    // @PreDestroy
     public void stopEventListening() {
         log.info("Event Hub 리스너 종료");
         isRunning = false;

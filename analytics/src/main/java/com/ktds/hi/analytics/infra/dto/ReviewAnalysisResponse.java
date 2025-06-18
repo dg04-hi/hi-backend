@@ -20,7 +20,9 @@ public class ReviewAnalysisResponse {
     private Integer totalReviews;
     private Integer positiveReviewCount;
     private Integer negativeReviewCount;
+    private Integer neutralReviewCount;
     private Double positiveRate;
     private Double negativeRate;
+    private Double neutralRate;
     private LocalDate analysisDate;
 }
