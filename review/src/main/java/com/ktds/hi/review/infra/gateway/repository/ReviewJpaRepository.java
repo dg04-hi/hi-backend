@@ -5,6 +5,8 @@ import com.ktds.hi.review.infra.gateway.entity.ReviewEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -30,9 +32,11 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewEntity, Long> {
      * 리뷰 ID와 회원 ID로 리뷰 조회
      */
     Optional<ReviewEntity> findByIdAndMemberId(Long id, Long memberId);
-    
+
+
     /**
-     * 매장 ID와 회원 ID로 리뷰 존재 여부 확인
+     * 닉네임으로 외부 리뷰 중복 체크
      */
-    boolean existsByStoreIdAndMemberId(Long storeId, Long memberId);
+    @Query("SELECT COUNT(r) > 0 FROM ReviewEntity r WHERE r.storeId = :storeId AND r.memberId = -1 AND r.memberNickname = :nickname")
+    boolean existsByStoreIdAndExternalNickname(@Param("storeId") Long storeId, @Param("nickname") String nickname);
 }

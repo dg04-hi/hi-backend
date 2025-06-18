@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.review.biz.domain.Review;
 import com.ktds.hi.review.biz.domain.ReviewStatus;
 import com.ktds.hi.review.biz.usecase.out.ReviewRepository;
+import com.ktds.hi.review.infra.gateway.repository.ReviewJpaRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class ExternalReviewEventHubAdapter {
 
     @Qualifier("externalReviewEventConsumer")
     private final EventHubConsumerClient externalReviewEventConsumer;
-
+    private final ReviewJpaRepository reviewJpaRepository;
     private final ObjectMapper objectMapper;
     private final ReviewRepository reviewRepository;
 
@@ -119,9 +120,20 @@ public class ExternalReviewEventHubAdapter {
             String platform = (String) event.get("platform");
             Integer syncedCount = (Integer) event.get("syncedCount");
 
+
             // Store에서 발행하는 reviews 배열 처리
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> reviews = (List<Map<String, Object>>) event.get("reviews");
+
+            if (reviews != null) {
+                for (int i = 0; i < reviews.size(); i++) {
+                    Map<String, Object> review = reviews.get(i);
+                    log.info("Review[{}]: {}", i, review);
+                }
+            } else {
+                log.info("No reviews found in event.");
+            }
+
 
             if (reviews == null || reviews.isEmpty()) {
                 log.warn("리뷰 데이터가 없습니다: platform={}, storeId={}", platform, storeId);
@@ -157,16 +169,22 @@ public class ExternalReviewEventHubAdapter {
      */
     private Review saveExternalReview(Long storeId, String platform, Map<String, Object> reviewData) {
         try {
+            String nickname = createMemberNickname(platform, reviewData);
             // ✅ 단순화된 매핑
+            if (reviewJpaRepository.existsByStoreIdAndExternalNickname(storeId, nickname)) {
+                log.info("중복 리뷰 스킵: storeId={}, nickname={}", storeId, nickname);
+                return null;
+            }
+
             Review review = Review.builder()
                     .storeId(storeId)
-                    .memberId(null)  // 외부 리뷰는 회원 ID 없음
+                    .memberId(-1L)
                     .memberNickname(createMemberNickname(platform, reviewData))
                     .rating(extractRating(reviewData))
                     .content(extractContent(reviewData))
                     .imageUrls(new ArrayList<>()) // 외부 리뷰는 이미지 없음
                     .status(ReviewStatus.ACTIVE)
-                    .likeCount(0)     // ✅ 고정값 0
+                    .likeCount(0)
                     .dislikeCount(0)
                     .build();
 
