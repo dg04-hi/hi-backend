@@ -89,6 +89,7 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
                 .map(ReviewListResponse::getContent)
                 .filter(content -> content != null && !content.trim().isEmpty())
                 .map(content -> content.replace("`", "")
+                    .replace("\n", "")
                     .replace("\\", "")
                     .replace("\"", ""))
                 .collect(Collectors.toList());
