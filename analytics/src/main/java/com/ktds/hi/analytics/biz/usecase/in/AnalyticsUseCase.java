@@ -30,6 +30,12 @@ public interface AnalyticsUseCase {
      * AI 피드백 요약 조회
      */
     AiFeedbackSummaryResponse getAIFeedbackSummary(Long storeId);
+
+
+    /**
+     * AI 긍정 피드백 요약 조회(고객용)
+     */
+    CustomerPositiveReviewResponse getPositiveIFeedbackSummary(Long storeId);
     
     /**
      * 리뷰 분석 조회

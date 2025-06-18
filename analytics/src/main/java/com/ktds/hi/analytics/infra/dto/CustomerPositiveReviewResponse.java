@@ -25,10 +25,6 @@ public class CustomerPositiveReviewResponse {
 	@Schema(description = "긍정적인 리뷰 요약")
 	private String positiveSummary;
 
-
-	@Schema(description = "분석된 총 리뷰 수")
-	private Integer totalReviewsAnalyzed;
-
 	@Schema(description = "분석 일시")
 	private LocalDateTime analyzedAt;
 }

@@ -48,7 +48,13 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
         return aiFeedbackJpaRepository.findLatestByStoreId(storeId)
                 .map(this::toAiFeedbackDomain);
     }
-    
+
+    @Override
+    public Optional<AiFeedback> findPositiveAIFeedbackByStoreId(Long storeId) {
+        return aiFeedbackJpaRepository.findLatestByStoreId(storeId)
+            .map(this::toAiFeedbackDomain);
+    }
+
     @Override
     public AiFeedback saveAIFeedback(AiFeedback feedback) {
         AiFeedbackEntity entity = toAiFeedbackEntity(feedback);

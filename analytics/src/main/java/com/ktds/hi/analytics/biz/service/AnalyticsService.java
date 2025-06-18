@@ -251,7 +251,49 @@ public class AnalyticsService implements AnalyticsUseCase {
             throw new RuntimeException("AI 피드백 요약 조회에 실패했습니다.", e);
         }
     }
-    
+
+    @Override
+    // @Cacheable(value = "customerPositiveFeedback", key = "#storeId")
+    public CustomerPositiveReviewResponse getPositiveIFeedbackSummary(Long storeId) {
+
+        try {
+            // 1. 캐시에서 먼저 확인 (타입 안전성 보장)
+            String cacheKey = "customerPositiveFeedback:store:" + storeId;
+            var cachedResult = cachePort.getAnalyticsCache(cacheKey);
+            if (cachedResult.isPresent()) {
+                Object cached = cachedResult.get();
+                if (cached instanceof CustomerPositiveReviewResponse) {
+                    log.info("캐시에서 AI 긍정 피드백 반환: storeId={}", storeId);
+                    return (CustomerPositiveReviewResponse) cached;
+                }
+                log.debug("AI 긍정 피드백 캐시 데이터 타입 불일치, DB에서 조회: storeId={}", storeId);
+            }
+
+            // 1. 기존 AI 피드백 조회
+            var aiFeedback = analyticsPort.findPositiveAIFeedbackByStoreId(storeId);
+
+            if (aiFeedback.isEmpty()) {
+                // 2. AI 피드백이 없으면 새로 생성
+               throw new RuntimeException("AI 긍정 피드백 요약 조회 실패");
+            }
+
+
+            // 3. 응답 생성
+            var response = CustomerPositiveReviewResponse.builder()
+                .storeId(aiFeedback.get().getStoreId())
+                .positiveSummary(aiFeedback.get().getPositiveSummary())
+                .analyzedAt(aiFeedback.get().getCreatedAt())
+                .build();
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("AI 피드백 조회 중 오류 발생: storeId={}", storeId, e);
+            throw new RuntimeException("AI 피드백 조회에 실패했습니다.", e);
+        }
+
+    }
+
     @Override
     public ReviewAnalysisResponse getReviewAnalysis(Long storeId, int days) {
         log.info("리뷰 분석 조회 시작: storeId={}", storeId);

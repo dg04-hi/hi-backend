@@ -64,7 +64,7 @@ public class AnalyticsController {
         
         return ResponseEntity.ok(SuccessResponse.of(response, "AI 피드백 상세 조회 성공"));
     }
-    
+
     /**
      * 매장 통계 조회
      */
@@ -102,6 +102,24 @@ public class AnalyticsController {
         
         return ResponseEntity.ok(SuccessResponse.of(response, "AI 피드백 요약 조회 성공"));
     }
+
+    /**
+     * AI 긍정 피드백 요약 조회(고객용)
+     */
+    @Operation(summary = "AI 긍정 피드백 요약 조회", description = "매장의 AI 긍정 피드백 요약 정보를 조회합니다.")
+    @GetMapping("/stores/{storeId}/customer/summary")
+    public ResponseEntity<SuccessResponse<CustomerPositiveReviewResponse>> getCustomerAIFeedbackSummary(
+        @Parameter(description = "매장 ID", required = true)
+        @PathVariable @NotNull Long storeId) {
+
+        log.info("AI 피드백 요약 조회 요청: storeId={}", storeId);
+
+        CustomerPositiveReviewResponse response = analyticsUseCase.getPositiveIFeedbackSummary(storeId);
+
+        return ResponseEntity.ok(SuccessResponse.of(response, "AI 피드백 요약 조회 성공"));
+    }
+
+
     
     /**
      * 리뷰 분석 조회
