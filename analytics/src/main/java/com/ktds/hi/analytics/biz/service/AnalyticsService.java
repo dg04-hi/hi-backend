@@ -262,7 +262,7 @@ public class AnalyticsService implements AnalyticsUseCase {
             }
 
             // 2. 최근 리뷰 데이터 조회 (30일)
-            List<String> recentReviews = externalReviewPort.getRecentReviews(storeId, 30);
+            List<String> recentReviews = externalReviewPort.getRecentReviews(storeId, days);
 
             if (recentReviews.isEmpty()) {
                 ReviewAnalysisResponse emptyResponse = ReviewAnalysisResponse.builder()
@@ -289,8 +289,8 @@ public class AnalyticsService implements AnalyticsUseCase {
                 .totalReviews(totalCount)
                 .positiveReviewCount(positiveCount)
                 .negativeReviewCount(negativeCount)
-                .positiveRate((double) positiveCount / totalCount * 100)
-                .negativeRate((double) negativeCount / totalCount * 100)
+                .positiveRate(Math.floor((double) positiveCount / totalCount * 100) / 10.0)
+                .negativeRate(Math.floor((double) negativeCount / totalCount * 100) / 10.0)
                 .analysisDate(LocalDate.now())
                 .build();
 
