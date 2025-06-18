@@ -168,7 +168,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
             // 실제 카카오 응답 구조 확인
             if (!root.has("success") || !root.get("success").asBoolean()) {
-                log.warn("카카오 API 호출 실패: {}", root.path("message").asText());
+                log.warn("카카오 API 호출 실패:: {}", root.path("message").asText());
                 updateSyncStatusWithCache(storeId, platform, "FAILED", 0);
                 return 0;
             }
