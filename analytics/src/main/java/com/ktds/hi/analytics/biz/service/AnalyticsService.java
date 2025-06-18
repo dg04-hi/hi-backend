@@ -276,8 +276,10 @@ public class AnalyticsService implements AnalyticsUseCase {
                     .totalReviews(0)
                     .positiveReviewCount(0)
                     .negativeReviewCount(0)
+                    .neutralReviewCount(0)
                     .positiveRate(0.0)
                     .negativeRate(0.0)
+                    .neutralRate(0.0)
                     .analysisDate(LocalDate.now())
                     .build();
 
