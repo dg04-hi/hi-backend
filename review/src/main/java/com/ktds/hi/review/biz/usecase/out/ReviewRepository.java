@@ -27,7 +27,13 @@ public interface ReviewRepository {
      * 매장 ID로 리뷰 목록 조회
      */
     Page<Review> findReviewsByStoreId(Long storeId, Pageable pageable);
-    
+
+
+    /**
+     * 매장 ID로 리뷰 목록 조회
+     */
+    Page<Review> findReviewsByStoreIdOrderByCreatedAtDesc(Long storeId, Pageable pageable);
+
     /**
      * 회원 ID로 리뷰 목록 조회
      */

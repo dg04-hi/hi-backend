@@ -40,6 +40,13 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
         Page<ReviewEntity> entities = reviewJpaRepository.findByStoreIdAndStatus(storeId, ReviewStatus.ACTIVE, pageable);
         return entities.map(this::toDomain);
     }
+
+    @Override
+    public Page<Review> findReviewsByStoreIdOrderByCreatedAtDesc(Long storeId, Pageable pageable) {
+        Page<ReviewEntity> entities = reviewJpaRepository.findByStoreIdAndStatus(storeId, ReviewStatus.ACTIVE,
+            pageable);
+        return entities.map(this::toDomain);
+    }
     
     @Override
     public Page<Review> findReviewsByMemberId(Long memberId, Pageable pageable) {
