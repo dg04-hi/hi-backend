@@ -24,8 +24,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Azure Event Hub 어댑터 클래스 (단순화)
- * 외부 리뷰 이벤트 수신 및 Review 테이블 저장
+ * Azure Event Hub 어댑터 클래스 - 수정된 버전
+ * 외부 리뷰 이벤트 수신 및 Review 테이블 저장 (중복 방지)
  */
 @Slf4j
 @Component
@@ -34,7 +34,7 @@ public class ExternalReviewEventHubAdapter {
 
     @Qualifier("externalReviewEventConsumer")
     private final EventHubConsumerClient externalReviewEventConsumer;
-    private final ReviewJpaRepository reviewJpaRepository;
+    private final ReviewJpaRepository reviewJpaRepository;  // ✅ 중복 체크용
     private final ObjectMapper objectMapper;
     private final ReviewRepository reviewRepository;
 
@@ -59,22 +59,34 @@ public class ExternalReviewEventHubAdapter {
     }
 
     /**
-     * 외부 리뷰 이벤트 수신 처리
+     * 외부 리뷰 이벤트 수신 처리 - 모든 파티션 처리
      */
     private void listenToExternalReviewEvents() {
         log.info("외부 리뷰 이벤트 수신 시작");
 
         try {
-            while (isRunning) {
-                Iterable<PartitionEvent> events = externalReviewEventConsumer.receiveFromPartition(
-                        "4",                          // 파티션 ID (0으로 수정)
-                        100,                          // 최대 이벤트 수
-                        EventPosition.earliest(),     // 시작 위치
-                        Duration.ofSeconds(30)        // 타임아웃
-                );
+            // ✅ 1. 파티션 정보 조회 (하드코딩 제거)
+            String[] partitionIds = {"0", "1", "2", "3"};
+            log.info("처리할 파티션: {}", String.join(", ", partitionIds));
 
-                for (PartitionEvent partitionEvent : events) {
-                    handleExternalReviewEvent(partitionEvent);
+            while (isRunning) {
+                // ✅ 2. 모든 파티션 순회 처리
+                for (String partitionId : partitionIds) {
+                    try {
+                        Iterable<PartitionEvent> events = externalReviewEventConsumer.receiveFromPartition(
+                                partitionId,                  // ✅ 동적 파티션 ID
+                                50,                           // 배치 크기 줄임 (성능 최적화)
+                                EventPosition.latest(),       // ✅ 최신 메시지만 (중복 방지)
+                                Duration.ofSeconds(10)        // 타임아웃 줄임
+                        );
+
+                        for (PartitionEvent partitionEvent : events) {
+                            handleExternalReviewEvent(partitionEvent);
+                        }
+
+                    } catch (Exception e) {
+                        log.error("파티션 {} 처리 중 오류: {}", partitionId, e.getMessage());
+                    }
                 }
 
                 Thread.sleep(1000);
@@ -120,20 +132,9 @@ public class ExternalReviewEventHubAdapter {
             String platform = (String) event.get("platform");
             Integer syncedCount = (Integer) event.get("syncedCount");
 
-
             // Store에서 발행하는 reviews 배열 처리
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> reviews = (List<Map<String, Object>>) event.get("reviews");
-
-            if (reviews != null) {
-                for (int i = 0; i < reviews.size(); i++) {
-                    Map<String, Object> review = reviews.get(i);
-                    log.info("Review[{}]: {}", i, review);
-                }
-            } else {
-                log.info("No reviews found in event.");
-            }
-
 
             if (reviews == null || reviews.isEmpty()) {
                 log.warn("리뷰 데이터가 없습니다: platform={}, storeId={}", platform, storeId);
@@ -144,11 +145,15 @@ public class ExternalReviewEventHubAdapter {
                     platform, storeId, reviews.size());
 
             int savedCount = 0;
+            int duplicateCount = 0;
+
             for (Map<String, Object> reviewData : reviews) {
                 try {
                     Review savedReview = saveExternalReview(storeId, platform, reviewData);
                     if (savedReview != null) {
                         savedCount++;
+                    } else {
+                        duplicateCount++;
                     }
                 } catch (Exception e) {
                     log.error("개별 리뷰 저장 실패: platform={}, storeId={}, error={}",
@@ -156,8 +161,8 @@ public class ExternalReviewEventHubAdapter {
                 }
             }
 
-            log.info("외부 리뷰 동기화 완료: platform={}, storeId={}, expected={}, saved={}",
-                    platform, storeId, reviews.size(), savedCount);
+            log.info("외부 리뷰 동기화 완료: platform={}, storeId={}, total={}, saved={}, duplicate={}",
+                    platform, storeId, reviews.size(), savedCount, duplicateCount);
 
         } catch (Exception e) {
             log.error("외부 리뷰 동기화 이벤트 처리 실패: storeId={}, error={}", storeId, e.getMessage(), e);
@@ -165,30 +170,36 @@ public class ExternalReviewEventHubAdapter {
     }
 
     /**
-     * 개별 외부 리뷰 저장 (단순화)
+     * 개별 외부 리뷰 저장 - 중복 체크 포함
      */
     private Review saveExternalReview(Long storeId, String platform, Map<String, Object> reviewData) {
         try {
-            String nickname = createMemberNickname(platform, reviewData);
-            // ✅ 단순화된 매핑
-            if (reviewJpaRepository.existsByStoreIdAndExternalNickname(storeId, nickname)) {
-                log.info("중복 리뷰 스킵: storeId={}, nickname={}", storeId, nickname);
+            // ✅ 1. 중복 체크용 고유 식별자 생성
+            String externalNickname = createMemberNickname(platform, reviewData);
+            String content = extractContent(reviewData);
+
+            // ✅ 2. 중복 체크 (storeId + 닉네임 + 내용으로 중복 판단)
+            boolean isDuplicate = reviewJpaRepository.existsByStoreIdAndMemberNicknameAndContent(
+                    storeId, externalNickname, content);
+
+            if (isDuplicate) {
+                log.debug("중복 리뷰 스킵: storeId={}, nickname={}", storeId, externalNickname);
                 return null;
             }
 
+            // ✅ 3. 새로운 리뷰 저장
             Review review = Review.builder()
                     .storeId(storeId)
-                    .memberId(-1L)
-                    .memberNickname(createMemberNickname(platform, reviewData))
+                    .memberId(null)  // 외부 리뷰는 회원 ID 없음
+                    .memberNickname(externalNickname)
                     .rating(extractRating(reviewData))
-                    .content(extractContent(reviewData))
+                    .content(content)
                     .imageUrls(new ArrayList<>()) // 외부 리뷰는 이미지 없음
                     .status(ReviewStatus.ACTIVE)
                     .likeCount(0)
                     .dislikeCount(0)
                     .build();
 
-            // Review 테이블에 저장
             Review savedReview = reviewRepository.saveReview(review);
 
             log.debug("외부 리뷰 저장 완료: reviewId={}, platform={}, storeId={}, author={}",
@@ -204,12 +215,12 @@ public class ExternalReviewEventHubAdapter {
     }
 
     /**
-     * 플랫폼별 회원 닉네임 생성 (카카오 API 필드명 수정)
+     * 플랫폼별 회원 닉네임 생성
      */
     private String createMemberNickname(String platform, Map<String, Object> reviewData) {
         String authorName = null;
 
-        // ✅ 카카오 API 구조에 맞춰 수정
+        // 카카오 API 구조에 맞춰 수정
         if ("KAKAO".equalsIgnoreCase(platform)) {
             authorName = (String) reviewData.get("reviewer_name");
         } else {
@@ -248,7 +259,7 @@ public class ExternalReviewEventHubAdapter {
             return "외부 플랫폼 리뷰";
         }
 
-        // 내용이 너무 길면 자르기 (reviews 테이블 length 제한 대비)
+        // 내용이 너무 길면 자르기
         if (content.length() > 1900) {
             content = content.substring(0, 1900) + "...";
         }

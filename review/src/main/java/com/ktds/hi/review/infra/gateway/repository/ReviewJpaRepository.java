@@ -35,8 +35,12 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewEntity, Long> {
 
 
     /**
-     * 닉네임으로 외부 리뷰 중복 체크
+     * 중복 리뷰 체크 (매장ID + 닉네임 + 내용으로 판단)
      */
-    @Query("SELECT COUNT(r) > 0 FROM ReviewEntity r WHERE r.storeId = :storeId AND r.memberId = -1 AND r.memberNickname = :nickname")
-    boolean existsByStoreIdAndExternalNickname(@Param("storeId") Long storeId, @Param("nickname") String nickname);
+    boolean existsByStoreIdAndMemberNicknameAndContent(Long storeId, String memberNickname, String content);
+
+    /**
+     * 대안: 외부 닉네임으로만 중복 체크 (더 간단한 방법)
+     */
+    boolean existsByStoreIdAndExternalNickname(Long storeId, String externalNickname);
 }
