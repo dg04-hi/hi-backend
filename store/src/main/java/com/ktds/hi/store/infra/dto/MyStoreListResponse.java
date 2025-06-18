@@ -39,4 +39,6 @@ public class MyStoreListResponse {
 
     @Schema(description = "운영시간", example = "월-금 09:00-21:00")
     private String operatingHours;
+    @Schema(description = "매장 이미지")
+    private String imageUrl;
 }

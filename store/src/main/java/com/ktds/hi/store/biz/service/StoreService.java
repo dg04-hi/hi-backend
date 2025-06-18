@@ -87,6 +87,7 @@ public class StoreService implements StoreUseCase {
                         .rating(store.getRating())
                         .reviewCount(store.getReviewCount())
                         .status("운영중")
+                        .imageUrl(store.getImageUrl())
                         .operatingHours(store.getOperatingHours())
                         .build())
                 .collect(Collectors.toList());
@@ -129,7 +130,7 @@ public class StoreService implements StoreUseCase {
                 .orElseThrow(() -> new BusinessException("STORE_ACCESS_DENIED", "매장에 대한 권한이 없습니다."));
 
         store.updateInfo(request.getStoreName(), request.getAddress(), request.getDescription(),
-                request.getPhone(), request.getOperatingHours());
+                request.getPhone(), request.getOperatingHours(), request.getImageUrl());
 
         storeJpaRepository.save(store);
 

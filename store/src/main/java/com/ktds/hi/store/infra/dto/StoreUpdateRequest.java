@@ -38,4 +38,7 @@ public class StoreUpdateRequest {
 
     @Schema(description = "매장 태그 목록", example = "[\"맛집\", \"혼밥\", \"가성비\"]")
     private List<String> tags;
+
+    @Schema(description = "매장 이미지")
+    private String imageUrl;
 }
