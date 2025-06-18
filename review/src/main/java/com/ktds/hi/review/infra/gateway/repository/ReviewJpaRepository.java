@@ -39,24 +39,10 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewEntity, Long> {
         @Param("cutoffDate") LocalDateTime cutoffDate,
         Pageable pageable
     );
-
     /**
-     * 특정 매장의 닉네임별 리뷰 개수 조회 (스팸 체크용)
+     * 전체 시스템에서 동일한 Content 중복 체크 (매장 무관)
      */
-    @Query("SELECT COUNT(r) FROM ReviewEntity r WHERE r.storeId = :storeId AND r.memberNickname = :memberNickname")
-    Long countByStoreIdAndMemberNickname(@Param("storeId") Long storeId, @Param("memberNickname") String memberNickname);
-
-    /**
-     * 강화된 중복 체크: 매장ID + 닉네임 + 내용으로 중복 체크
-     * 외부 리뷰에서 동일한 닉네임이 같은 내용의 리뷰를 작성했는지 확인
-     */
-    boolean existsByStoreIdAndMemberNicknameAndContent(Long storeId, String memberNickname, String content);
-
-    /**
-     * 닉네임 기반 중복 체크: 매장ID + 닉네임으로 기존 리뷰 존재 확인
-     * 동일한 닉네임이 이미 리뷰를 작성했는지 체크
-     */
-    boolean existsByStoreIdAndMemberNickname(Long storeId, String memberNickname);
+    boolean existsByContent(String content);
 
     /**
      * 시간 기반 중복 체크: 특정 시간 이후 동일한 닉네임의 리뷰 존재 확인

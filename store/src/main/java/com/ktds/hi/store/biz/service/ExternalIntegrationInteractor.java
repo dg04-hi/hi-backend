@@ -4,6 +4,7 @@ import com.azure.messaging.eventhubs.EventData;
 import com.azure.messaging.eventhubs.EventDataBatch;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.azure.messaging.eventhubs.models.SendOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktds.hi.store.biz.usecase.in.ExternalIntegrationUseCase;
 import com.ktds.hi.store.biz.usecase.out.ExternalPlatformPort;
@@ -249,6 +250,9 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
             EventData eventData = new EventData(payloadJson);
 
+            // 🔥 파티션 4번에 보내기 위한 SendOptions 설정
+            SendOptions sendOptions = new SendOptions();
+            sendOptions.setPartitionId("4");
             // EventDataBatch 사용
             EventDataBatch batch = producer.createBatch();
             if (batch.tryAdd(eventData)) {

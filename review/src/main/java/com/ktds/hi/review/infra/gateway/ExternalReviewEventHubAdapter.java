@@ -64,38 +64,25 @@ public class ExternalReviewEventHubAdapter {
     }
 
     /**
-     * 외부 리뷰 이벤트 수신 처리 (모든 파티션 검사 추가)
+     * 외부 리뷰 이벤트 수신 처리 (기존 로직 유지)
      */
     private void listenToExternalReviewEvents() {
         log.info("외부 리뷰 이벤트 수신 시작");
 
         try {
-            // 🔥 모든 파티션 ID 설정 (기존 "4"번 포함)
-            String[] partitionIds = {"0", "1", "2", "3", "4"};
-            log.info("처리할 파티션: {}", String.join(", ", partitionIds));
-
             while (isRunning) {
-                // 🔥 모든 파티션 순회 처리
-                for (String partitionId : partitionIds) {
-                    try {
-                        Iterable<PartitionEvent> events = externalReviewEventConsumer.receiveFromPartition(
-                                partitionId,                  // 🔥 동적 파티션 ID
-                                100,                          // 최대 이벤트 수 (기존과 동일)
-                                EventPosition.earliest(),     // 시작 위치 (기존과 동일)
-                                Duration.ofSeconds(30)        // 타임아웃 (기존과 동일)
-                        );
+                Iterable<PartitionEvent> events = externalReviewEventConsumer.receiveFromPartition(
+                        "4",                          // 파티션 ID (기존과 동일)
+                        100,                          // 최대 이벤트 수 (기존과 동일)
+                        EventPosition.earliest(),     // 시작 위치 (기존과 동일)
+                        Duration.ofSeconds(10)        // 타임아웃 (기존과 동일)
+                );
 
-                        for (PartitionEvent partitionEvent : events) {
-                            handleExternalReviewEvent(partitionEvent);
-                        }
-
-                    } catch (Exception e) {
-                        log.error("파티션 {} 처리 중 오류 (계속 진행): {}", partitionId, e.getMessage());
-                        // 개별 파티션 오류는 무시하고 다음 파티션 계속 처리
-                    }
+                for (PartitionEvent partitionEvent : events) {
+                    handleExternalReviewEvent(partitionEvent);
                 }
 
-                Thread.sleep(1000); // 기존과 동일
+                Thread.sleep(1000);
             }
         } catch (InterruptedException e) {
             log.info("외부 리뷰 이벤트 수신 중단됨");
@@ -199,32 +186,11 @@ public class ExternalReviewEventHubAdapter {
             String content = extractContent(reviewData);
             String memberNickname = extractMemberNickname(reviewData);
 
-            // 1차 중복 체크: storeId + content 기반
-            if (reviewJpaRepository.existsByStoreIdAndContent(storeId, content)) {
-                log.debug("중복 리뷰 스킵 (content 기준): storeId={}, content={}",
-                        storeId, content.substring(0, Math.min(50, content.length())));
-                return null;
-            }
 
-            // 2차 중복 체크: storeId + memberNickname + content 기반 (더 정확)
-            if (reviewJpaRepository.existsByStoreIdAndMemberNicknameAndContent(storeId, memberNickname, content)) {
-                log.debug("중복 리뷰 스킵 (nickname+content 기준): storeId={}, nickname={}",
-                        storeId, memberNickname);
-                return null;
-            }
-
-            // 3차 중복 체크: 스팸 방지 (동일 닉네임이 5개 이상 리뷰 작성 시 차단)
-            Long reviewCount = reviewJpaRepository.countByStoreIdAndMemberNickname(storeId, memberNickname);
-            if (reviewCount >= 5) {
-                log.debug("스팸 가능성으로 리뷰 스킵: storeId={}, nickname={}, count={}",
-                        storeId, memberNickname, reviewCount);
-                return null;
-            }
-
-            // 4차 중복 체크: 최근 1시간 내 동일 닉네임 리뷰 체크
-            LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-            if (reviewJpaRepository.existsByStoreIdAndMemberNicknameAfterTime(storeId, memberNickname, oneHourAgo)) {
-                log.debug("1시간 내 중복 리뷰 스킵: storeId={}, nickname={}", storeId, memberNickname);
+            // 1차 중복 체크: content 기반 (전체 시스템)
+            if (reviewJpaRepository.existsByContent(content)) {
+                log.debug("중복 리뷰 스킵 (content 기준): content={}",
+                        content.substring(0, Math.min(50, content.length())));
                 return null;
             }
 
@@ -346,4 +312,6 @@ public class ExternalReviewEventHubAdapter {
             log.info("처리된 이벤트 ID 캐시 정리 완료: 현재 크기={}", processedEventIds.size());
         }
     }
+
+
 }
