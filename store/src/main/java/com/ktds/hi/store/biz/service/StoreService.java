@@ -87,6 +87,7 @@ public class StoreService implements StoreUseCase {
                         .rating(store.getRating())
                         .reviewCount(store.getReviewCount())
                         .status("운영중")
+                        .imageUrl(store.getImageUrl())
                         .operatingHours(store.getOperatingHours())
                         .build())
                 .collect(Collectors.toList());
