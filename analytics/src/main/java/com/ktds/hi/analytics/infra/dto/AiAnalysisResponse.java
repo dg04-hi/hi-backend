@@ -43,6 +43,9 @@ public class AiAnalysisResponse {
 	@Schema(description = "감정 분석 결과")
 	private String sentimentAnalysis;
 
+	@Schema(description = "긍정 분석 요약")
+	private String positiveSummary;
+
 	@Schema(description = "신뢰도 점수")
 	private Double confidenceScore;
 

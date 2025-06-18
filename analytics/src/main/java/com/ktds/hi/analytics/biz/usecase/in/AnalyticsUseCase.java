@@ -46,4 +46,8 @@ public interface AnalyticsUseCase {
      */
     List<String> generateActionPlansFromFeedback(ActionPlanCreateRequest request,Long feedbackId);
 
+
+    // 🔥 고객용 긍정 리뷰 조회 API 추가
+    CustomerPositiveReviewResponse getCustomerPositiveReview(Long storeId);
+
 }

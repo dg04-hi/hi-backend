@@ -152,7 +152,12 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
             return getDummyRecentReviews(storeId);
         }
     }
-    
+
+    @Override
+    public List<String> getPositiveReviews(Long storeId, Integer days) {
+        return List.of();
+    }
+
     @Override
     public Integer getReviewCount(Long storeId) {
         log.info("리뷰 개수 조회: storeId={}", storeId);
