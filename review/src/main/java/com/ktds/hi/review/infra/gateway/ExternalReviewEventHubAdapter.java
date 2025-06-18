@@ -185,16 +185,14 @@ public class ExternalReviewEventHubAdapter {
      */
     private Review saveExternalReview(Long storeId, String platform, Map<String, Object> reviewData) {
         try {
-            // ✅ 1. 중복 체크용 고유 식별자 생성
-            String externalNickname = createMemberNickname(platform, reviewData);
+
             String content = extractContent(reviewData);
 
-            // ✅ 2. 중복 체크 (storeId + 닉네임 + 내용으로 중복 판단)
-            boolean isDuplicate = reviewJpaRepository.existsByStoreIdAndMemberNicknameAndContent(
-                    storeId, externalNickname, content);
+            boolean isDuplicate = reviewJpaRepository.existsByStoreIdAndContent(
+                    storeId, content);
 
             if (isDuplicate) {
-                log.debug("중복 리뷰 스킵: storeId={}, nickname={}", storeId, externalNickname);
+                log.debug("중복 리뷰 스킵: storeId={}, nickname={}", storeId);
                 return null;
             }
 
