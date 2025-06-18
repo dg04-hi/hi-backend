@@ -246,6 +246,10 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
             // Redis에서 실제 리뷰 데이터 조회
             Map<String, Object> eventPayload = createEventPayloadFromRedis(storeId, platform, syncedCount);
+
+            if (eventPayload == null)
+                throw new BusinessException("Review 데이터가 없습니다.");
+
             String payloadJson = objectMapper.writeValueAsString(eventPayload);
 
             EventData eventData = new EventData(payloadJson);
@@ -284,6 +288,12 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
         // Redis에서 실제 리뷰 데이터 조회
         List<Map<String, Object>> reviews = externalPlatformPort.getTempReviews(storeId, platform);
+        if (reviews == null || reviews.isEmpty()) {
+            log.warn("🚨 리뷰 데이터가 없어 이벤트 발행 중단: storeId={}, platform={}, syncedCount={}",
+                    storeId, platform, syncedCount);
+            return null;
+        }
+
         payload.put("reviews", reviews);
 
         return payload;
