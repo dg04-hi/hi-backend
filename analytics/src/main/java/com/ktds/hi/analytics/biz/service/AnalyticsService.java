@@ -247,7 +247,7 @@ public class AnalyticsService implements AnalyticsUseCase {
     }
     
     @Override
-    public ReviewAnalysisResponse getReviewAnalysis(Long storeId) {
+    public ReviewAnalysisResponse getReviewAnalysis(Long storeId, int days) {
         log.info("리뷰 분석 조회 시작: storeId={}", storeId);
 
         try {
@@ -522,8 +522,6 @@ public class AnalyticsService implements AnalyticsUseCase {
             // 1. 리뷰 데이터 수집
             List<String> reviewData = externalReviewPort.getRecentReviews(storeId, days);
 
-            log.info("review Data check ===> {}", reviewData);
-
             if (reviewData.isEmpty()) {
                 log.warn("AI 피드백 생성을 위한 리뷰 데이터가 없습니다: storeId={}", storeId);
                 return createDefaultAIFeedback(storeId);
@@ -531,6 +529,7 @@ public class AnalyticsService implements AnalyticsUseCase {
 
             // 2. 실제 AI 서비스 호출 (기존 하드코딩 부분을 수정)
             AiFeedback aiFeedback = aiServicePort.generateFeedback(reviewData);
+
 
 
             // 3. 도메인 객체 속성 설정

@@ -88,6 +88,10 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
                 .filter(review -> review.getCreatedAt() != null && review.getCreatedAt().isAfter(cutoffDate))
                 .map(ReviewListResponse::getContent)
                 .filter(content -> content != null && !content.trim().isEmpty())
+                .map(content -> content.replace("`", "")
+                    .replace("\n", "")
+                    .replace("\\", "")
+                    .replace("\"", ""))
                 .collect(Collectors.toList());
 
 

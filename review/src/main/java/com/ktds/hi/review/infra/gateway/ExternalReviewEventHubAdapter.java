@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import java.util.HashSet;
+import java.util.Set;
 /**
  * Azure Event Hub 어댑터 클래스 - 수정된 버전
  * 외부 리뷰 이벤트 수신 및 Review 테이블 저장 (중복 방지)
@@ -34,7 +35,8 @@ public class ExternalReviewEventHubAdapter {
 
     @Qualifier("externalReviewEventConsumer")
     private final EventHubConsumerClient externalReviewEventConsumer;
-    private final ReviewJpaRepository reviewJpaRepository;  // ✅ 중복 체크용
+    private final ReviewJpaRepository reviewJpaRepository;
+    private final Set<String> processedEventIds = new HashSet<>();
     private final ObjectMapper objectMapper;
     private final ReviewRepository reviewRepository;
 
@@ -132,9 +134,20 @@ public class ExternalReviewEventHubAdapter {
             String platform = (String) event.get("platform");
             Integer syncedCount = (Integer) event.get("syncedCount");
 
+
             // Store에서 발행하는 reviews 배열 처리
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> reviews = (List<Map<String, Object>>) event.get("reviews");
+
+            if (reviews != null) {
+                for (int i = 0; i < reviews.size(); i++) {
+                    Map<String, Object> review = reviews.get(i);
+                    log.info("Review[{}]: {}", i, review);
+                }
+            } else {
+                log.info("No reviews found in event.");
+            }
+
 
             if (reviews == null || reviews.isEmpty()) {
                 log.warn("리뷰 데이터가 없습니다: platform={}, storeId={}", platform, storeId);
@@ -152,8 +165,6 @@ public class ExternalReviewEventHubAdapter {
                     Review savedReview = saveExternalReview(storeId, platform, reviewData);
                     if (savedReview != null) {
                         savedCount++;
-                    } else {
-                        duplicateCount++;
                     }
                 } catch (Exception e) {
                     log.error("개별 리뷰 저장 실패: platform={}, storeId={}, error={}",
@@ -161,8 +172,8 @@ public class ExternalReviewEventHubAdapter {
                 }
             }
 
-            log.info("외부 리뷰 동기화 완료: platform={}, storeId={}, total={}, saved={}, duplicate={}",
-                    platform, storeId, reviews.size(), savedCount, duplicateCount);
+            log.info("외부 리뷰 동기화 완료: platform={}, storeId={}, expected={}, saved={}",
+                    platform, storeId, reviews.size(), savedCount);
 
         } catch (Exception e) {
             log.error("외부 리뷰 동기화 이벤트 처리 실패: storeId={}, error={}", storeId, e.getMessage(), e);
@@ -190,16 +201,17 @@ public class ExternalReviewEventHubAdapter {
             // ✅ 3. 새로운 리뷰 저장
             Review review = Review.builder()
                     .storeId(storeId)
-                    .memberId(null)  // 외부 리뷰는 회원 ID 없음
-                    .memberNickname(externalNickname)
+                    .memberId(-1L)
+                    .memberNickname(createMemberNickname(platform, reviewData))
                     .rating(extractRating(reviewData))
-                    .content(content)
+                    .content(extractContent(reviewData))
                     .imageUrls(new ArrayList<>()) // 외부 리뷰는 이미지 없음
                     .status(ReviewStatus.ACTIVE)
                     .likeCount(0)
                     .dislikeCount(0)
                     .build();
 
+            // Review 테이블에 저장
             Review savedReview = reviewRepository.saveReview(review);
 
             log.debug("외부 리뷰 저장 완료: reviewId={}, platform={}, storeId={}, author={}",
@@ -265,5 +277,69 @@ public class ExternalReviewEventHubAdapter {
         }
 
         return content;
+    }
+
+    //추가 코드
+    /**
+     * 외부 리뷰 이벤트 처리 (중복 방지)
+     */
+    private void handleExternalReviewEventSafely(PartitionEvent partitionEvent) {
+        try {
+            EventData eventData = partitionEvent.getData();
+            String eventBody = eventData.getBodyAsString();
+
+            // 🔥 이벤트 고유 ID 생성 (오프셋 + 시퀀스 넘버 기반)
+            String eventId = String.format("%s_%s",
+                    eventData.getOffset(),
+                    eventData.getSequenceNumber());
+
+            // 이미 처리된 이벤트인지 확인
+            if (processedEventIds.contains(eventId)) {
+                log.debug("이미 처리된 이벤트 스킵: eventId={}", eventId);
+                return;
+            }
+
+            Map<String, Object> event = objectMapper.readValue(eventBody, Map.class);
+            String eventType = (String) event.get("eventType");
+            Long storeId = Long.valueOf(event.get("storeId").toString());
+
+            log.info("외부 리뷰 이벤트 수신: type={}, storeId={}, eventId={}", eventType, storeId, eventId);
+
+            if ("EXTERNAL_REVIEW_SYNC".equals(eventType)) {
+                // 기존 메서드 호출하여 리뷰 저장
+                handleExternalReviewSyncEvent(storeId, event);
+
+                // 🔥 처리 완료된 이벤트 ID 저장
+                markEventAsProcessed(eventId);
+                log.info("이벤트 처리 완료: eventId={}, storeId={}", eventId, storeId);
+
+            } else {
+                log.warn("알 수 없는 외부 리뷰 이벤트 타입: {}", eventType);
+            }
+
+        } catch (Exception e) {
+            log.error("외부 리뷰 이벤트 처리 중 오류 발생", e);
+        }
+    }
+
+    /**
+     * 이벤트 처리 완료 표시 (메모리 관리 포함)
+     */
+    private void markEventAsProcessed(String eventId) {
+        processedEventIds.add(eventId);
+
+        // 🔥 메모리 관리: 1000개 이상 쌓이면 오래된 것들 삭제
+        if (processedEventIds.size() > 1000) {
+            // 앞의 500개만 삭제하고 최근 500개는 유지
+            Set<String> recentIds = new HashSet<>();
+            processedEventIds.stream()
+                    .skip(500)
+                    .forEach(recentIds::add);
+
+            processedEventIds.clear();
+            processedEventIds.addAll(recentIds);
+
+            log.info("처리된 이벤트 ID 캐시 정리 완료: 현재 크기={}", processedEventIds.size());
+        }
     }
 }

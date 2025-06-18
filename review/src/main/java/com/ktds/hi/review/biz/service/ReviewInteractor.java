@@ -80,7 +80,7 @@ public class ReviewInteractor implements CreateReviewUseCase, DeleteReviewUseCas
     @Transactional(readOnly = true)
     public List<ReviewListResponse> getStoreReviews(Long storeId, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20);
-        Page<Review> reviews = reviewRepository.findReviewsByStoreId(storeId, pageable);
+        Page<Review> reviews = reviewRepository.findReviewsByStoreIdOrderByCreatedAtDesc(storeId, pageable);
         
         return reviews.stream()
                 .filter(review -> review.getStatus() == ReviewStatus.ACTIVE)
