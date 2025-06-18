@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -47,7 +48,17 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
             pageable);
         return entities.map(this::toDomain);
     }
-    
+
+    @Override
+    public Page<Review> findRecentReviewsByStoreId(Long storeId, Pageable pageable,
+        LocalDateTime cutoffDate) {
+
+        Page<ReviewEntity> entities = reviewJpaRepository.findRecentReviewsByStoreId(storeId, ReviewStatus.ACTIVE,
+            cutoffDate,pageable);
+        return entities.map(this::toDomain);
+
+    }
+
     @Override
     public Page<Review> findReviewsByMemberId(Long memberId, Pageable pageable) {
         Page<ReviewEntity> entities = reviewJpaRepository.findByMemberIdAndStatus(memberId, ReviewStatus.ACTIVE, pageable);

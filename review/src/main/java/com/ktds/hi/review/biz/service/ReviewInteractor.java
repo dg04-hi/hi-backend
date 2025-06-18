@@ -96,7 +96,29 @@ public class ReviewInteractor implements CreateReviewUseCase, DeleteReviewUseCas
                         .build())
                 .collect(Collectors.toList());
     }
-    
+
+    @Override
+    public List<ReviewListResponse> getStoreRecentReviews(Long storeId, Integer page, Integer size, Integer days) {
+        Pageable pageable = PageRequest.of(page != null ? page : 0, size == null || size == 0 ? 1000 : size);
+
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(days);
+        Page<Review> reviews = reviewRepository.findRecentReviewsByStoreId(storeId, pageable, cutoffDate);
+
+        return reviews.stream()
+            .filter(review -> review.getStatus() == ReviewStatus.ACTIVE)
+            .map(review -> ReviewListResponse.builder()
+                .reviewId(review.getId())
+                .memberNickname(review.getMemberNickname())
+                .rating(review.getRating())
+                .content(review.getContent())
+                .imageUrls(review.getImageUrls())
+                .likeCount(review.getLikeCount())
+                .dislikeCount(review.getDislikeCount())
+                .createdAt(review.getCreatedAt())
+                .build())
+            .collect(Collectors.toList());
+    }
+
     @Override
     @Transactional(readOnly = true)
     public ReviewDetailResponse getReviewDetail(Long reviewId) {

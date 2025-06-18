@@ -3,7 +3,9 @@ package com.ktds.hi.review.biz.usecase.out;
 import com.ktds.hi.review.biz.domain.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +35,11 @@ public interface ReviewRepository {
      * 매장 ID로 리뷰 목록 조회
      */
     Page<Review> findReviewsByStoreIdOrderByCreatedAtDesc(Long storeId, Pageable pageable);
+
+    /**
+     * 매장 ID와 일자 데이터로 최근 리뷰 목록 조회
+     */
+    Page<Review> findRecentReviewsByStoreId(Long storeId, Pageable pageable, @Param("cutoffDate") LocalDateTime cutoffDate);
 
     /**
      * 회원 ID로 리뷰 목록 조회

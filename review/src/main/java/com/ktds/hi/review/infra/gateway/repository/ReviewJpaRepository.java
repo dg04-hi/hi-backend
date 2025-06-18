@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -27,7 +28,18 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewEntity, Long> {
      * 회원 ID와 상태로 리뷰 목록 조회
      */
     Page<ReviewEntity> findByMemberIdAndStatus(Long memberId, ReviewStatus status, Pageable pageable);
-    
+
+    @Query("SELECT r FROM ReviewEntity r WHERE r.storeId = :storeId " +
+        "AND r.status = :status " +
+        "AND (CAST(:cutoffDate AS TIMESTAMP) IS NULL OR r.createdAt >= :cutoffDate) " +
+        "ORDER BY r.createdAt DESC")
+    Page<ReviewEntity> findRecentReviewsByStoreId(
+        @Param("storeId") Long storeId,
+        @Param("status") ReviewStatus status,
+        @Param("cutoffDate") LocalDateTime cutoffDate,
+        Pageable pageable
+    );
+
     /**
      * 리뷰 ID와 회원 ID로 리뷰 조회
      */

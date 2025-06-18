@@ -52,6 +52,24 @@ public class ReviewController {
         List<ReviewListResponse> reviews = getReviewUseCase.getStoreReviews(storeId, page, size);
         return ResponseEntity.ok(reviews);
     }
+
+    /**
+     * 최근 매장 리뷰 목록 조회 API
+     */
+    @GetMapping("/stores/recent/{storeId}")
+    @Operation(summary = "매장 최근 리뷰 목록 조회", description = "특정 매장의 최근 리뷰 목록을 조회합니다.")
+    public ResponseEntity<List<ReviewListResponse>> getStoreRecentReviews(
+        @PathVariable Long storeId,
+        @RequestParam(defaultValue = "0") Integer page,
+        @RequestParam(defaultValue = "0") Integer size,
+        @RequestParam Integer days
+    ) {
+
+        List<ReviewListResponse> reviews = getReviewUseCase.getStoreRecentReviews(storeId, page, size, days);
+        return ResponseEntity.ok(reviews);
+    }
+
+
     
     /**
      * 리뷰 상세 조회 API

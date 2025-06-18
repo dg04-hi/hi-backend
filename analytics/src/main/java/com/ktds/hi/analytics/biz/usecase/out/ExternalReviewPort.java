@@ -17,6 +17,7 @@ public interface ExternalReviewPort {
      * 최근 리뷰 데이터 조회
      */
     List<String> getRecentReviews(Long storeId, Integer days);
+
     
     /**
      * 리뷰 개수 조회

@@ -15,6 +15,11 @@ public interface GetReviewUseCase {
      * 매장 리뷰 목록 조회
      */
     List<ReviewListResponse> getStoreReviews(Long storeId, Integer page, Integer size);
+
+    /**
+     * 매장 최근 리뷰 목록 조회
+     */
+    List<ReviewListResponse> getStoreRecentReviews(Long storeId, Integer page, Integer size, Integer days);
     
     /**
      * 리뷰 상세 조회
