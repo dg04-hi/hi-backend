@@ -35,12 +35,12 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewEntity, Long> {
 
 
     /**
-     * 중복 리뷰 체크 (매장ID + 닉네임 + 내용으로 판단)
+     * ✅ 수정: 매장ID + 내용으로 중복 리뷰 체크
      */
-    boolean existsByStoreIdAndMemberNicknameAndContent(Long storeId, String memberNickname, String content);
+    boolean existsByStoreIdAndContent(Long storeId, String content);
 
     /**
      * 대안: 외부 닉네임으로만 중복 체크 (더 간단한 방법)
      */
-    boolean existsByStoreIdAndExternalNickname(Long storeId, String externalNickname);
+//    boolean existsByStoreIdAndExternalNickname(Long storeId, String externalNickname);
 }
