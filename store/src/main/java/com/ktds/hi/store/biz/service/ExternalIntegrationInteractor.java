@@ -247,8 +247,6 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
             // Redis에서 실제 리뷰 데이터 조회
             Map<String, Object> eventPayload = createEventPayloadFromRedis(storeId, platform, syncedCount);
 
-            if (eventPayload == null)
-                throw new BusinessException("Review 데이터가 없습니다.");
 
             String payloadJson = objectMapper.writeValueAsString(eventPayload);
 
@@ -288,71 +286,10 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
 
         // Redis에서 실제 리뷰 데이터 조회
         List<Map<String, Object>> reviews = externalPlatformPort.getTempReviews(storeId, platform);
-        if (reviews == null || reviews.isEmpty()) {
-            log.warn("🚨 리뷰 데이터가 없어 이벤트 발행 중단: storeId={}, platform={}, syncedCount={}",
-                    storeId, platform, syncedCount);
-            return null;
-        }
 
         payload.put("reviews", reviews);
 
         return payload;
-    }
-
-    /**
-     * Redis에서 처리 완료 표시 (새로 추가)
-     */
-    private void markAsProcessedInRedis(Long storeId, String platform) {
-        try {
-            String pattern = String.format("external:reviews:pending:%d:%s:*", storeId, platform);
-            Set<String> keys = redisTemplate.keys(pattern);
-
-            if (keys != null) {
-                for (String key : keys) {
-                    redisTemplate.delete(key);
-                }
-            }
-
-            log.info("Redis에서 처리 완료된 데이터 삭제: storeId={}, platform={}", storeId, platform);
-
-        } catch (Exception e) {
-            log.warn("Redis 데이터 정리 실패: storeId={}, platform={}", storeId, platform);
-        }
-    }
-
-    /**
-     * 재시도 큐로 이동 (새로 추가)
-     */
-    private void moveToRetryQueue(Long storeId, String platform, String errorMessage) {
-        try {
-            String pattern = String.format("external:reviews:pending:%d:%s:*", storeId, platform);
-            Set<String> keys = redisTemplate.keys(pattern);
-
-            if (keys != null && !keys.isEmpty()) {
-                String pendingKey = keys.iterator().next();
-                Map<String, Object> cacheData = (Map<String, Object>) redisTemplate.opsForValue().get(pendingKey);
-
-                if (cacheData != null) {
-                    // 재시도 횟수 증가
-                    Integer retryCount = (Integer) cacheData.getOrDefault("retryCount", 0);
-                    cacheData.put("retryCount", retryCount + 1);
-                    cacheData.put("lastError", errorMessage);
-                    cacheData.put("status", "RETRY");
-
-                    // 재시도 큐로 이동
-                    String retryKey = pendingKey.replace("pending", "retry");
-                    redisTemplate.opsForValue().set(retryKey, cacheData, Duration.ofHours(12));
-
-                    // 원본 삭제
-                    redisTemplate.delete(pendingKey);
-
-                    log.info("재시도 큐로 이동: retryKey={}, retryCount={}", retryKey, retryCount + 1);
-                }
-            }
-
-        } catch (Exception e) {
-            log.error("재시도 큐 이동 실패: storeId={}, platform={}", storeId, platform);
-        }
     }
 
     private void publishConnectEvent(Long storeId, String platform) {

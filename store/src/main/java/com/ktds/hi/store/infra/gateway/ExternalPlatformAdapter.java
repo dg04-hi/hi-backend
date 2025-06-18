@@ -157,6 +157,8 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
         try {
             log.info("카카오 API 응답 파싱 시작: storeId={}", storeId);
 
+
+
             if (responseBody == null || responseBody.trim().isEmpty()) {
                 log.warn("카카오 응답이 비어있음: storeId={}", storeId);
                 return 0;
@@ -173,11 +175,12 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
             // reviews 배열 직접 접근
             JsonNode reviewsNode = root.get("reviews");
-            if (reviewsNode == null || !reviewsNode.isArray()) {
-                log.warn("카카오 응답에 reviews 배열이 없음");
+            if (reviewsNode == null || !reviewsNode.isArray() || reviewsNode.size() == 0) {
+                log.warn("카카오 응답에 reviews 배열이 없거나, 리뷰 목록이 없음!");
                 updateSyncStatusWithCache(storeId, platform, "SUCCESS", 0);
                 return 0;
             }
+
 
             // 매장 정보 파싱 (옵션)
             Map<String, Object> storeInfo = null;
