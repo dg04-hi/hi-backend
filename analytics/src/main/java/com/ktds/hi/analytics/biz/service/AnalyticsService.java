@@ -247,7 +247,7 @@ public class AnalyticsService implements AnalyticsUseCase {
     }
     
     @Override
-    public ReviewAnalysisResponse getReviewAnalysis(Long storeId) {
+    public ReviewAnalysisResponse getReviewAnalysis(Long storeId, int days) {
         log.info("리뷰 분석 조회 시작: storeId={}", storeId);
 
         try {

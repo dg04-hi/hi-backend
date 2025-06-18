@@ -110,11 +110,15 @@ public class AnalyticsController {
     @GetMapping("/stores/{storeId}/review-analysis")
     public ResponseEntity<SuccessResponse<ReviewAnalysisResponse>> getReviewAnalysis(
             @Parameter(description = "매장 ID", required = true)
-            @PathVariable @NotNull Long storeId) {
+            @PathVariable @NotNull Long storeId,
+
+            @Parameter(description = "분석할 최근 일수", required = true)
+            @RequestParam(name = "days") int days
+        ) {
         
         log.info("리뷰 분석 조회 요청: storeId={}", storeId);
         
-        ReviewAnalysisResponse response = analyticsUseCase.getReviewAnalysis(storeId);
+        ReviewAnalysisResponse response = analyticsUseCase.getReviewAnalysis(storeId, days);
         
         return ResponseEntity.ok(SuccessResponse.of(response, "리뷰 분석 조회 성공"));
     }

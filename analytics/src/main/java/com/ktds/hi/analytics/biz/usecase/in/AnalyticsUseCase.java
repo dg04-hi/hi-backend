@@ -34,7 +34,7 @@ public interface AnalyticsUseCase {
     /**
      * 리뷰 분석 조회
      */
-    ReviewAnalysisResponse getReviewAnalysis(Long storeId);
+    ReviewAnalysisResponse getReviewAnalysis(Long storeId, int days);
 
     /**
      * AI 리뷰 분석 및 실행계획 생성
