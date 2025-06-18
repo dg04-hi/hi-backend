@@ -19,8 +19,13 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -71,23 +76,62 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
         log.info("최근 리뷰 데이터 조회: storeId={}, days={}", storeId, days);
         
         try {
-            // String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "/recent?days=" + days;
-            // String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "?size=100";
+
             //최근 데이터를 가져오도록 변경
-            String url = reviewServiceUrl + "/api/reviews/stores/recent/" + storeId + "?size=100&days=" + days;
+            // String url = reviewServiceUrl + "/api/reviews/stores/recent/" + storeId + "?size=100&days=" + days;
+            //
+            // // ReviewListResponse 배열로 직접 받기
+            // ReviewListResponse[] reviewArray = restTemplate.getForObject(url, ReviewListResponse[].class);
 
-            // ReviewListResponse 배열로 직접 받기
-            ReviewListResponse[] reviewArray = restTemplate.getForObject(url, ReviewListResponse[].class);
+            int totalSize = 200;
+            int threadCount = 4;
+            int pageSize = totalSize / threadCount; // 50개씩
 
-            if (reviewArray == null || reviewArray.length == 0) {
-                log.info("매장에 최근 리뷰가 없습니다: storeId={}", storeId);
-                return List.of();
+            // ExecutorService 생성
+            ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+            List<CompletableFuture<ReviewListResponse[]>> futures = new ArrayList<>();
+
+            // 4개의 비동기 요청 생성 (limit 50, offset 0/50/100/150)
+            for (int i = 0; i < threadCount; i++) {
+                final int offset = i * pageSize;
+                final int limit = pageSize;
+
+                CompletableFuture<ReviewListResponse[]> future = CompletableFuture.supplyAsync(() -> {
+                    String url = reviewServiceUrl + "/api/reviews/stores/recent/" + storeId
+                        + "?size=" + limit + "&offset=" + offset + "&days=" + days;
+
+                    log.debug("스레드 {}에서 URL 호출: {}", Thread.currentThread().getName(), url);
+
+                    // 기존과 동일한 방식으로 API 호출
+                    ReviewListResponse[] reviewArray = restTemplate.getForObject(url, ReviewListResponse[].class);
+
+                    if (reviewArray == null) {
+                        log.debug("스레드 {}에서 빈 응답 수신", Thread.currentThread().getName());
+                        return new ReviewListResponse[0];
+                    }
+
+                    log.debug("스레드 {}에서 {} 개 리뷰 수신", Thread.currentThread().getName(), reviewArray.length);
+                    return reviewArray;
+
+                }, executorService);
+
+                futures.add(future);
             }
+
+            // 모든 요청 완료 대기 및 결과 합치기
+            List<ReviewListResponse> allReviewResponses = new ArrayList<>();
+            for (CompletableFuture<ReviewListResponse[]> future : futures) {
+                ReviewListResponse[] reviewArray = future.get(30, TimeUnit.SECONDS); // 30초 타임아웃
+                allReviewResponses.addAll(Arrays.asList(reviewArray));
+            }
+
+            executorService.shutdown();
+
 
             // 최근 N일 이내의 리뷰만 필터링
             LocalDateTime cutoffDate = LocalDateTime.now().minusDays(days);
 
-            List<String> recentReviews = Arrays.stream(reviewArray)
+            List<String> recentReviews = allReviewResponses.stream()
                 .filter(review -> review.getCreatedAt() != null && review.getCreatedAt().isAfter(cutoffDate))
                 .map(ReviewListResponse::getContent)
                 .filter(content -> content != null && !content.trim().isEmpty())
