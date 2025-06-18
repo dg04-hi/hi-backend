@@ -30,8 +30,10 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * AI 서비스 어댑터 클래스
@@ -97,6 +99,116 @@ public class AIServiceAdapter implements AIServicePort {
             log.error("OpenAI 피드백 생성 중 오류 발생", e);
             return createFallbackFeedback(reviewData);
         }
+    }
+
+    @Override
+    public Map<SentimentType, Integer> analyzeBulkSentiments(List<String> reviews) {
+        log.info("대량 리뷰 감정 분석 시작: 리뷰 수={}", reviews.size());
+
+        try {
+            if (reviews.isEmpty()) {
+                return createEmptyResultMap();
+            }
+
+            // 유효한 리뷰만 필터링
+            List<String> validReviews = reviews.stream()
+                .filter(review -> review != null && !review.trim().isEmpty())
+                .collect(Collectors.toList());
+
+            if (validReviews.isEmpty()) {
+                return createEmptyResultMap();
+            }
+
+            // 리뷰를 번호와 함께 포맷팅
+            StringBuilder reviewsText = new StringBuilder();
+            for (int i = 0; i < validReviews.size(); i++) {
+                reviewsText.append(String.format("%d. %s\n", i + 1, validReviews.get(i)));
+            }
+
+            String prompt = String.format(
+                """
+				다음 리뷰들을 분석하여 긍정, 부정, 중립의 개수를 세어주세요.
+				
+				리뷰 목록:
+				%s
+				
+				결과를 다음 JSON 형식으로만 답변해주세요:
+				{
+					"positive": 긍정_개수,
+					"negative": 부정_개수,
+					"neutral": 중립_개수
+				}
+				
+				다른 설명은 하지 말고 JSON만 답변해주세요.
+				긍정,부정,중립 개수를 모두 더했을때, 총 리뷰수와 동일해야 합니다.
+				정확하게 세어주세요.
+				""",
+                reviewsText.toString()
+            );
+
+            // 기존 callOpenAI 메서드 활용
+            String result = callOpenAI(prompt);
+
+            // 결과 파싱
+            Map<SentimentType, Integer> sentimentMap = parseBulkSentimentResult(result, validReviews.size());
+
+            log.info("대량 리뷰 감정 분석 완료: 긍정={}, 부정={}, 중립={}",
+                sentimentMap.get(SentimentType.POSITIVE),
+                sentimentMap.get(SentimentType.NEGATIVE),
+                sentimentMap.get(SentimentType.NEUTRAL));
+
+            return sentimentMap;
+
+        } catch (Exception e) {
+            log.error("대량 리뷰 감정 분석 중 오류 발생, fallback 사용", e);
+            return createFallbackResultMap(reviews.size());
+        }
+    }
+
+    private Map<SentimentType, Integer> parseBulkSentimentResult(String result, int totalReviews) {
+        try {
+            // 기존 objectMapper 필드 사용
+            Map<String, Object> jsonResult = objectMapper.readValue(result.trim(), Map.class);
+
+            int positive = ((Number) jsonResult.getOrDefault("positive", 0)).intValue();
+            int negative = ((Number) jsonResult.getOrDefault("negative", 0)).intValue();
+            int neutral = ((Number) jsonResult.getOrDefault("neutral", 0)).intValue();
+
+            // 결과 검증 및 보정
+            int totalAnalyzed = positive + negative + neutral;
+            if (totalAnalyzed != totalReviews) {
+                log.warn("분석 결과 불일치 보정: 분석된 수={}, 실제 리뷰 수={}", totalAnalyzed, totalReviews);
+                int difference = totalReviews - totalAnalyzed;
+                neutral += difference;
+            }
+
+            Map<SentimentType, Integer> resultMap = new HashMap<>();
+            resultMap.put(SentimentType.POSITIVE, Math.max(0, positive));
+            resultMap.put(SentimentType.NEGATIVE, Math.max(0, negative));
+            resultMap.put(SentimentType.NEUTRAL, Math.max(0, neutral));
+
+            return resultMap;
+
+        } catch (Exception e) {
+            log.error("대량 감정 분석 결과 파싱 실패: {}", result, e);
+            return createFallbackResultMap(totalReviews);
+        }
+    }
+
+    private Map<SentimentType, Integer> createEmptyResultMap() {
+        Map<SentimentType, Integer> result = new HashMap<>();
+        result.put(SentimentType.POSITIVE, 0);
+        result.put(SentimentType.NEGATIVE, 0);
+        result.put(SentimentType.NEUTRAL, 0);
+        return result;
+    }
+
+    private Map<SentimentType, Integer> createFallbackResultMap(int totalReviews) {
+        Map<SentimentType, Integer> result = new HashMap<>();
+        result.put(SentimentType.POSITIVE, (int) (totalReviews * 0.6));
+        result.put(SentimentType.NEGATIVE, (int) (totalReviews * 0.2));
+        result.put(SentimentType.NEUTRAL, totalReviews - (int) (totalReviews * 0.6) - (int) (totalReviews * 0.2));
+        return result;
     }
 
 

@@ -317,10 +317,8 @@ public class AnalyticsService implements AnalyticsUseCase {
     }
 
     /**
-     * LLM 기반 리뷰 감정 분석 - 한 번의 분석으로 긍정/부정/중립 수 모두 반환
-     *
-     * @param reviews 분석할 리뷰 목록
-     * @return ReviewSentimentCount 감정별 리뷰 수
+     * 기존 analyzeReviewSentiments 메서드를 대량 분석 방식으로 개선
+     * 개별 AI 호출 대신 한 번의 호출로 모든 리뷰 분석
      */
     private ReviewSentimentCount analyzeReviewSentiments(List<String> reviews) {
         log.info("LLM 기반 리뷰 감정 분석 시작: 총 리뷰 수={}", reviews.size());
@@ -339,34 +337,12 @@ public class AnalyticsService implements AnalyticsUseCase {
                 return new ReviewSentimentCount(0, 0, 0);
             }
 
-            int positiveCount = 0;
-            int negativeCount = 0;
-            int neutralCount = 0;
+            // 기존 개별 분석 대신 대량 분석 사용
+            Map<SentimentType, Integer> sentimentCounts = aiServicePort.analyzeBulkSentiments(validReviews);
 
-            // 각 리뷰를 AI로 감정 분석
-            for (String review : validReviews) {
-                try {
-                    SentimentType sentiment = aiServicePort.analyzeSentiment(review);
-
-                    switch (sentiment) {
-                        case POSITIVE:
-                            positiveCount++;
-                            break;
-                        case NEGATIVE:
-                            negativeCount++;
-                            break;
-                        case NEUTRAL:
-                        default:
-                            neutralCount++;
-                            break;
-                    }
-
-                } catch (Exception e) {
-                    log.warn("개별 리뷰 감정 분석 실패, 중립으로 처리: {}",
-                        review.substring(0, Math.min(30, review.length())), e);
-                    neutralCount++; // 분석 실패 시 중립으로 처리
-                }
-            }
+            int positiveCount = sentimentCounts.get(SentimentType.POSITIVE);
+            int negativeCount = sentimentCounts.get(SentimentType.NEGATIVE);
+            int neutralCount = sentimentCounts.get(SentimentType.NEUTRAL);
 
             ReviewSentimentCount result = new ReviewSentimentCount(positiveCount, negativeCount, neutralCount);
 
