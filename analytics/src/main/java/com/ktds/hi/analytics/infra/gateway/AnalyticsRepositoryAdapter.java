@@ -123,7 +123,7 @@ public class AnalyticsRepositoryAdapter implements AnalyticsPort {
         return AiFeedbackEntity.builder()
                 .id(domain.getId())
                 .storeId(domain.getStoreId())
-                .summary(domain.getSummary())
+                .summary(domain.getSummary().replace("*",""))
                 .positivePointsJson(parseListToJson(domain.getPositivePoints()))
                 .negativePointsJson(parseListToJson(domain.getNegativePoints()))
                 .improvementPointsJson(parseListToJson(domain.getImprovementPoints()))

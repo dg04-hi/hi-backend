@@ -72,7 +72,10 @@ public class ExternalReviewAdapter implements ExternalReviewPort {
         
         try {
             // String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "/recent?days=" + days;
-            String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "?size=100";
+            // String url = reviewServiceUrl + "/api/reviews/stores/" + storeId + "?size=100";
+            //최근 데이터를 가져오도록 변경
+            String url = reviewServiceUrl + "/api/reviews/stores/recent/" + storeId + "?size=100&days=" + days;
+
             // ReviewListResponse 배열로 직접 받기
             ReviewListResponse[] reviewArray = restTemplate.getForObject(url, ReviewListResponse[].class);
 

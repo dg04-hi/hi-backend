@@ -88,7 +88,7 @@ public class AIServiceAdapter implements AIServicePort {
             }
 
             // OpenAI API 호출하여 전체 리뷰 분석
-            String analysisResult = callOpenAIForAnalysis(reviewData);
+            String analysisResult = callOpenAIForAnalysis(reviewData).replace("`", "");
 
             // 결과 파싱 및 AiFeedback 객체 생성
             return parseAnalysisResult(analysisResult, reviewData.size());
@@ -191,8 +191,9 @@ public class AIServiceAdapter implements AIServicePort {
             2. 부정적 요소는 고객들이 자주 언급하는 안좋은 점들
             2. 개선점은 부정적 피드백이나 불만사항
             3. 추천사항은 매장 운영에 도움이 될 구체적인 제안
-            4. 신뢰도 점수는 0.0-1.0 사이의 값
-            5. summary에는 전체적인 리뷰 분석에 대한 요약이 잘 담기게 작성.
+            4. 신뢰도 점수는 0.0-1.0 사이의 값으로 리뷰정보를 보고 적절히 판단.
+            5. summary에는 전체적인 리뷰 분석에 대한 요약이 잘 담기게 작성하고 **같은 강조하는 문자 없이 텍스트로만 나타내주세요
+            6. 분석한 내용에 `(백틱) 이 들어가지 않도록 해주세요.
             """,
             reviewsText
         );
@@ -274,6 +275,11 @@ public class AIServiceAdapter implements AIServicePort {
      */
     private AiFeedback parseAnalysisResult(String analysisResult, int totalReviews) {
         try {
+
+            if(analysisResult.contains("`")){
+                log.info("tesafadsf1241241");
+            }
+
             // JSON 형태로 응답이 왔다고 가정하고 파싱
             Map<String, Object> result = objectMapper.readValue(analysisResult, Map.class);
 
