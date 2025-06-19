@@ -98,6 +98,27 @@ public class StoreService implements StoreUseCase {
     public String getAllTags(Long storeId){
         return storeJpaRepository.findById(storeId).get().getTagsJson();
     }
+
+    @Override
+    public List<StoreListResponse> getCategoryStores(String category){
+        List<StoreEntity> stores = storeJpaRepository.findByCategory(category);
+
+        return stores.stream()
+                .map(store -> StoreListResponse.builder()
+                        .storeId(store.getId())
+                        .storeName(store.getStoreName())
+                        .address(store.getAddress())
+                        .category(store.getCategory())
+                        .rating(store.getRating())
+                        .reviewCount(store.getReviewCount())
+                        .status("운영중")
+                        .tagJson(store.getTagsJson())
+                        .imageUrl(store.getImageUrl())
+                        .operatingHours(store.getOperatingHours())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<StoreListResponse> getAllStores() {
 
