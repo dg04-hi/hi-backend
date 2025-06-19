@@ -46,6 +46,8 @@ public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
      */
     List<StoreEntity> findByCategory(String category);
 
+    @Query("SELECT s FROM StoreEntity s WHERE s.storeName like  %:storeName%")
+    List<StoreEntity> finByStoreNameContaining(@Param("keyword") String storeName);
     /**
      * 상태로 매장 조회
      */

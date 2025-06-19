@@ -59,6 +59,8 @@ public class StoreController {
                 .body(ApiResponse.success(response, "매장이 성공적으로 등록되었습니다."));
     }
 
+
+
     @Operation(summary = "내 매장 목록 조회", description = "점주가 등록한 매장 목록을 조회합니다.")
     @GetMapping("/my")
     @PreAuthorize("hasRole('OWNER')")
@@ -71,11 +73,23 @@ public class StoreController {
         return ResponseEntity.ok(ApiResponse.success(responses, "내 매장 목록 조회 완료"));
     }
 
+
+
     @GetMapping("/stores/all")
     @Operation(summary = "매장 전체 리스트")
     public ResponseEntity<ApiResponse<List<StoreListResponse>>> getAllStores() {
 
         List<StoreListResponse> responses = storeUseCase.getAllStores();
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @Operation(summary = "매장 조회", description = "가게 검색한 매장 목록을 조회합니다.")
+    @GetMapping("/search/storeName/{storeName}")
+    public ResponseEntity<ApiResponse<List<StoreListResponse>>> getSearchStores(
+            HttpServletRequest httpRequest, @PathVariable String storeName) {
+
+        List<StoreListResponse> responses = storeUseCase.getSearchStoreName(storeName);
+
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 

@@ -35,6 +35,7 @@ public interface StoreUseCase {
 
     List<StoreListResponse> getCategoryStores(String category);
 
+    List<StoreListResponse> getSearchStoreName(String storeName);
 
     String getAllTags(Long storeId);
 
