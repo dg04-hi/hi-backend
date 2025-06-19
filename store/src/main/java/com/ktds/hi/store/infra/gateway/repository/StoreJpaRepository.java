@@ -147,5 +147,5 @@ public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
                                             @Param("keyword") String keyword,
                                             Pageable pageable);
 
-    StoreEntity findById(Long id);
+    Optional<StoreEntity> findById(Long id);
 }

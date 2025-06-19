@@ -96,7 +96,7 @@ public class StoreService implements StoreUseCase {
 
     @Override
     public String getAllTags(Long storeId){
-        return storeJpaRepository.findById(storeId).getTagsJson();
+        return storeJpaRepository.findById(storeId).get().getTagsJson();
     }
     @Override
     public List<StoreListResponse> getAllStores() {
