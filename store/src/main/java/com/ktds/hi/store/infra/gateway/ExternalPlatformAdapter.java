@@ -82,7 +82,7 @@ public class ExternalPlatformAdapter implements ExternalPlatformPort {
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("store_id", externalStoreId);
-            requestBody.put("days_limit", 1000);
+            requestBody.put("days_limit", 365);
             requestBody.put("max_time", 300);
 
             HttpHeaders headers = new HttpHeaders();

@@ -68,6 +68,7 @@ public class ExternalIntegrationInteractor implements ExternalIntegrationUseCase
                     throw new BusinessException("지원하지 않는 플랫폼입니다: " + request.getPlatform());
             }
 
+            log.info(request.getPlatform() + " 요청 Data : " + request.toString());
             // 동기화 이벤트 발행
             publishSyncEvent(storeId, request.getPlatform(), syncedCount);
 
