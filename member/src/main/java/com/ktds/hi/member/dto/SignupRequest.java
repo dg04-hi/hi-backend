@@ -34,4 +34,10 @@ public class SignupRequest {
     @Pattern(regexp = "^010-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다")
     @Schema(description = "전화번호", example = "010-1234-5678")
     private String phone;
+
+
+    @NotBlank(message = "역할분류는 필수입니다")
+    @Size(min = 2, max = 20, message = "역할분류는 2-20자 사이여야 합니다")
+    @Schema(description = "역할", example = "OWNER")
+    private String role;
 }

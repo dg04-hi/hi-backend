@@ -45,7 +45,7 @@ public class MemberServiceImpl implements MemberService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .nickname(request.getNickname())
                 .phone(request.getPhone())
-                .role("USER")
+                .role(request.getRole())
                 .build();
         
         MemberEntity savedMember = memberRepository.save(member);
