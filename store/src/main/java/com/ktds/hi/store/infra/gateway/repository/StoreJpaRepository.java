@@ -30,6 +30,7 @@ public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
      */
     List<StoreEntity> findByOwnerId(Long ownerId);
 
+
     /**
      * 매장 ID와 점주 ID로 매장 조회
      */
@@ -145,4 +146,6 @@ public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
                                             @Param("minRating") Double minRating,
                                             @Param("keyword") String keyword,
                                             Pageable pageable);
+
+    StoreEntity findById(Long id);
 }

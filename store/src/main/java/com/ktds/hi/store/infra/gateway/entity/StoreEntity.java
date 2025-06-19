@@ -197,4 +197,6 @@ public class StoreEntity {
     public boolean hasReviews() {
         return this.reviewCount != null && this.reviewCount > 0;
     }
+
+
 }

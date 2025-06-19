@@ -33,6 +33,8 @@ public interface StoreUseCase {
 
     List<StoreListResponse> getAllStores();
 
+    String getAllTags(Long storeId);
+
     /**
      * 매장 상세 조회
      *

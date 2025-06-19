@@ -41,7 +41,6 @@ import java.util.List;
 public class StoreController {
 
     private final StoreUseCase storeUseCase;
-    private final StoreService storeService;
     private final JwtTokenProvider jwtTokenProvider;
     private final MenuUseCase menuUseCase;
 
@@ -79,6 +78,15 @@ public class StoreController {
         List<StoreListResponse> responses = storeUseCase.getAllStores();
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
+
+    @GetMapping("/stores/{storeId}/tags")
+    @Operation(summary = "매장 전체 리스트")
+    public ResponseEntity<String> getStoreTags(@PathVariable Long storeId) {
+
+        String tagsJson  = storeUseCase.getAllTags(storeId);
+        return ResponseEntity.ok(tagsJson);
+    }
+
 
     @Operation(summary = "매장 상세 조회", description = "매장의 상세 정보를 조회합니다.")
     @GetMapping("/{storeId}")

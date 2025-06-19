@@ -20,6 +20,9 @@ public class StoreListResponse {
     @Schema(description = "매장명", example = "맛집 한번 가볼래?")
     private String storeName;
 
+   @Schema(description = "태그 리스트", example = "태그태그태그")
+    private String tagJson;
+
     @Schema(description = "주소", example = "서울시 강남구 테헤란로 123")
     private String address;
 

@@ -94,7 +94,10 @@ public class StoreService implements StoreUseCase {
                 .collect(Collectors.toList());
     }
 
-
+    @Override
+    public String getAllTags(Long storeId){
+        return storeJpaRepository.findById(storeId).getTagsJson();
+    }
     @Override
     public List<StoreListResponse> getAllStores() {
 
@@ -109,6 +112,7 @@ public class StoreService implements StoreUseCase {
                         .rating(store.getRating())
                         .reviewCount(store.getReviewCount())
                         .status("운영중")
+                        .tagJson(store.getTagsJson())
                         .imageUrl(store.getImageUrl())
                         .operatingHours(store.getOperatingHours())
                         .build())
