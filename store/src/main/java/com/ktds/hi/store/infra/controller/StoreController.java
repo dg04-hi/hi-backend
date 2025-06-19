@@ -79,6 +79,14 @@ public class StoreController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping("/stores/category/{category}")
+    @Operation(summary = "카테고리에 해당하는 매장")
+    public ResponseEntity<ApiResponse<List<StoreListResponse>>> getStoreCategories(@PathVariable String category) {
+
+        List<StoreListResponse> responses = storeUseCase.getCategoryStores(category);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     @GetMapping("/stores/{storeId}/tags")
     @Operation(summary = "매장 전체 리스트")
     public ResponseEntity<String> getStoreTags(@PathVariable Long storeId) {

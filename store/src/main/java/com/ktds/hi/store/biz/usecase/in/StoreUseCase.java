@@ -33,6 +33,8 @@ public interface StoreUseCase {
 
     List<StoreListResponse> getAllStores();
 
+    List<StoreListResponse> getCategoryStores(String category);
+
     String getAllTags(Long storeId);
 
     /**
