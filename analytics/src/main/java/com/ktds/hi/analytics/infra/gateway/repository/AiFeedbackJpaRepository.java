@@ -25,7 +25,7 @@ public interface AiFeedbackJpaRepository extends JpaRepository<AiFeedbackEntity,
     /**
      * 매장 ID로 최신 AI 피드백 조회
      */
-    @Query("SELECT af FROM AiFeedbackEntity af WHERE af.storeId = :storeId ORDER BY af.id DESC LIMIT 1")
+    @Query("SELECT af FROM AiFeedbackEntity af WHERE af.storeId = :storeId ORDER BY af.generatedAt DESC LIMIT 1")
     Optional<AiFeedbackEntity> findLatestByStoreId(@Param("storeId") Long storeId);
 
     /**
